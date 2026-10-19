@@ -40,10 +40,10 @@ export class CrashRecoveryModal extends Modal {
         });
 
         const detailsEl = infoCard.createDiv({ cls: 'exam-recovery-details' });
-        detailsEl.createEl('div', { text: `Titel: ${this.activeSession.examTitle}` });
-        detailsEl.createEl('div', { text: `Modul: ${this.activeSession.module}` });
-        detailsEl.createEl('div', { text: `Fortschritt: ${answeredCount}/${totalQuestions} Fragen beantwortet` });
-        detailsEl.createEl('div', { text: `Verbleibende Zeit: ca. ${remainingMinutes} Minute(n)` });
+        detailsEl.createDiv({ text: `Titel: ${this.activeSession.examTitle}` });
+        detailsEl.createDiv({ text: `Modul: ${this.activeSession.module}` });
+        detailsEl.createDiv({ text: `Fortschritt: ${answeredCount}/${totalQuestions} Fragen beantwortet` });
+        detailsEl.createDiv({ text: `Verbleibende Zeit: ca. ${remainingMinutes} Minute(n)` });
 
         const buttonBar = contentEl.createDiv({ cls: 'exam-recovery-buttons' });
 

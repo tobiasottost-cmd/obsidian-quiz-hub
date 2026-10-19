@@ -1,4 +1,4 @@
-import { computeContentHash, generateUUID } from '../parser/HashUtils';
+import { generateUUID } from '../parser/HashUtils';
 import { ParsedExamFile } from '../parser/ExamParser';
 import { ActiveSessionState, ChoiceItem, ErrorPoolItem, QuestionDefinition } from '../types';
 
@@ -92,7 +92,7 @@ export class ExamGenerator {
         const shuffleOptions = options.shuffleOptions !== false;
 
         // Shuffle full candidate pool first (Level 1)
-        const pool = this.shuffle(availableQuestions);
+        const pool = shuffleQuestions ? this.shuffle(availableQuestions) : [...availableQuestions];
         const count = Math.min(options.questionCount, pool.length);
         const selectedQuestions = pool.slice(0, count).map(q => this.prepareQuestion(q, shuffleOptions));
 

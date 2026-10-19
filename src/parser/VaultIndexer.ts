@@ -51,8 +51,8 @@ export class VaultIndexer {
     private registerVaultEvents(): void {
         this.eventRefs.push(
             this.app.vault.on('create', async (file: TAbstractFile) => {
-                if (this.isExamFile(file)) {
-                    await this.indexFile(file as TFile);
+                if (file instanceof TFile && this.isExamFile(file)) {
+                    await this.indexFile(file);
                     this.notifyIndexUpdated();
                 }
             })
@@ -60,8 +60,8 @@ export class VaultIndexer {
 
         this.eventRefs.push(
             this.app.vault.on('modify', async (file: TAbstractFile) => {
-                if (this.isExamFile(file)) {
-                    await this.indexFile(file as TFile);
+                if (file instanceof TFile && this.isExamFile(file)) {
+                    await this.indexFile(file);
                     this.notifyIndexUpdated();
                 }
             })
@@ -79,8 +79,8 @@ export class VaultIndexer {
         this.eventRefs.push(
             this.app.vault.on('rename', async (file: TAbstractFile, oldPath: string) => {
                 this.cache.delete(oldPath);
-                if (this.isExamFile(file)) {
-                    await this.indexFile(file as TFile);
+                if (file instanceof TFile && this.isExamFile(file)) {
+                    await this.indexFile(file);
                 }
                 this.notifyIndexUpdated();
             })
@@ -142,7 +142,7 @@ export class VaultIndexer {
             await this.indexFile(filesToIndex[i]);
             // Yield every 10 files to keep main thread responsive on mobile
             if ((i + 1) % 10 === 0) {
-                await new Promise((resolve) => setTimeout(resolve, 0));
+                await new Promise((resolve) => window.setTimeout(resolve, 0));
             }
         }
 

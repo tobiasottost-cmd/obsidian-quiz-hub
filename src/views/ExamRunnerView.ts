@@ -41,7 +41,7 @@ export class ExamRunnerView extends ItemView {
         });
 
         this.session.onQuestionChanged(() => {
-            this.renderQuestionContent();
+            void this.renderQuestionContent();
             this.updateHeaderProgress();
             this.updateMatrix();
             this.updateTilesStrip();
@@ -61,7 +61,7 @@ export class ExamRunnerView extends ItemView {
         if (!this.session) {
             // If opened without active session, check if active session in settings exists
             if (this.plugin.settings.activeSession) {
-                this.plugin.startExamWithSession(this.plugin.settings.activeSession);
+                void this.plugin.startExamWithSession(this.plugin.settings.activeSession);
             }
         }
     }
@@ -177,8 +177,8 @@ export class ExamRunnerView extends ItemView {
         });
 
         const titleDiv = leftGroup.createDiv({ cls: 'header-exam-titles' });
-        titleDiv.createEl('span', { cls: 'exam-title-text', text: this.session?.getState().examTitle || 'Klausur' });
-        titleDiv.createEl('span', { cls: 'exam-module-badge', text: this.session?.getState().module || 'Allgemein' });
+        titleDiv.createSpan({ cls: 'exam-title-text', text: this.session?.getState().examTitle || 'Klausur' });
+        titleDiv.createSpan({ cls: 'exam-module-badge', text: this.session?.getState().module || 'Allgemein' });
 
         // Center: Timer
         const timerDiv = topRow.createDiv({ cls: 'runner-timer-container', attr: { id: 'exam-runner-timer' } });
@@ -349,8 +349,8 @@ export class ExamRunnerView extends ItemView {
     }
 
     private renderQuestionArea(container: HTMLElement): void {
-        const questionArea = container.createDiv({ cls: 'exam-runner-question-area', attr: { id: 'question-area-container' } });
-        this.renderQuestionContent();
+        container.createDiv({ cls: 'exam-runner-question-area', attr: { id: 'question-area-container' } });
+        void this.renderQuestionContent();
     }
 
     private async renderQuestionContent(): Promise<void> {
@@ -404,7 +404,7 @@ export class ExamRunnerView extends ItemView {
         );
 
         // Options or Input Container
-        const inputArea = qCard.createDiv({ cls: 'question-input-area', attr: { id: 'question-input-container' } });
+        qCard.createDiv({ cls: 'question-input-area', attr: { id: 'question-input-container' } });
         this.renderQuestionOptions(currentQ);
 
         this.updateFlagButton();
@@ -605,7 +605,7 @@ export class ExamRunnerView extends ItemView {
             .setTitle('Zeit abgelaufen!')
             .setContent('Die Bearbeitungszeit für diese Klausur ist abgelaufen. Die Klausur wird nun ausgewertet.')
             .open();
-        this.submitExam();
+        void this.submitExam();
     }
 
     private confirmAndSubmit(): void {
@@ -630,7 +630,7 @@ export class ExamRunnerView extends ItemView {
         const confirmBtn = btnRow.createEl('button', { cls: 'mod-cta', text: 'Ja, abgeben' });
         confirmBtn.addEventListener('click', () => {
             modal.close();
-            this.submitExam();
+            void this.submitExam();
         });
 
         modal.open();
@@ -648,12 +648,14 @@ export class ExamRunnerView extends ItemView {
         cancelBtn.addEventListener('click', () => modal.close());
 
         const exitBtn = btnRow.createEl('button', { cls: 'mod-warning', text: 'Zum Dashboard' });
-        exitBtn.addEventListener('click', async () => {
-            modal.close();
-            if (this.session) {
-                await this.session.triggerAutoSave();
-            }
-            this.plugin.openDashboard(this.leaf);
+        exitBtn.addEventListener('click', () => {
+            void (async () => {
+                modal.close();
+                if (this.session) {
+                    await this.session.triggerAutoSave();
+                }
+                await this.plugin.openDashboard(this.leaf);
+            })();
         });
 
         modal.open();

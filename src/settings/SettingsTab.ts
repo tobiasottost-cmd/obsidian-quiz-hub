@@ -96,10 +96,14 @@ export class SettingsTab extends PluginSettingTab {
     }
 
     public display(): void {
+        this.renderSettings();
+    }
+
+    private renderSettings(): void {
         const { containerEl } = this;
         containerEl.empty();
 
-        containerEl.createEl('h2', { text: 'Exam and Quiz Hub — Einstellungen' });
+        new Setting(containerEl).setName('Exam and Quiz Hub — Einstellungen').setHeading();
 
         new Setting(containerEl)
             .setName('Klausuren-Ordner')
@@ -132,14 +136,13 @@ export class SettingsTab extends PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(40, 90, 5)
                 .setValue(this.plugin.settings.defaultPassingScore)
-                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.defaultPassingScore = value;
                     await this.plugin.saveSettings();
                 })
             );
 
-        containerEl.createEl('h3', { text: 'Audio & Gamification' });
+        new Setting(containerEl).setName('Audio & Gamification').setHeading();
 
         new Setting(containerEl)
             .setName('Soundeffekte aktivieren')
@@ -159,7 +162,6 @@ export class SettingsTab extends PluginSettingTab {
             .addSlider(slider => slider
                 .setLimits(0.1, 1.0, 0.1)
                 .setValue(this.plugin.settings.soundVolume)
-                .setDynamicTooltip()
                 .onChange(async (value) => {
                     this.plugin.settings.soundVolume = value;
                     this.plugin.soundManager.updateSettings(this.plugin.settings.enableSoundEffects, value);
@@ -178,7 +180,7 @@ export class SettingsTab extends PluginSettingTab {
                 })
             );
 
-        containerEl.createEl('h3', { text: 'Daten & Speicher' });
+        new Setting(containerEl).setName('Daten & Speicher').setHeading();
 
         const errorCount = Object.keys(this.plugin.settings.errorPool).length;
         new Setting(containerEl)
@@ -186,11 +188,11 @@ export class SettingsTab extends PluginSettingTab {
             .setDesc(`Aktuell befinden sich ${errorCount} Frage(n) im Fehlerspeicher.`)
             .addButton(btn => btn
                 .setButtonText('Fehlerspeicher leeren')
-                .setWarning()
+                .setDestructive()
                 .onClick(async () => {
                     this.plugin.settings.errorPool = {};
                     await this.plugin.saveSettings();
-                    this.display();
+                    this.renderSettings();
                 })
             );
 
@@ -199,7 +201,7 @@ export class SettingsTab extends PluginSettingTab {
             .setDesc(`Level ${this.plugin.settings.userLevel} (${this.plugin.settings.userXP} XP), Streak: ${this.plugin.settings.streakDays} Tage.`)
             .addButton(btn => btn
                 .setButtonText('Statistiken zurücksetzen')
-                .setWarning()
+                .setDestructive()
                 .onClick(async () => {
                     this.plugin.settings.userXP = 0;
                     this.plugin.settings.userLevel = 1;
@@ -207,7 +209,7 @@ export class SettingsTab extends PluginSettingTab {
                     this.plugin.settings.lastActiveDate = '';
                     this.plugin.settings.fsrsData = {};
                     await this.plugin.saveSettings();
-                    this.display();
+                    this.renderSettings();
                 })
             );
 
@@ -216,7 +218,7 @@ export class SettingsTab extends PluginSettingTab {
     }
 
     private displayAIConverterSection(containerEl: HTMLElement): void {
-        containerEl.createEl('h3', { text: '🤖 KI-Prompt & Markdown-Format' });
+        new Setting(containerEl).setName('🤖 KI-Prompt & Markdown-Format').setHeading();
 
         containerEl.createEl('p', {
             cls: 'text-muted',
@@ -230,11 +232,13 @@ export class SettingsTab extends PluginSettingTab {
             .addButton(btn => btn
                 .setButtonText('📋 Prompt kopieren')
                 .setCta()
-                .onClick(async () => {
-                    await this.copyTextToClipboard(AI_CONVERTER_PROMPT);
-                    new Notice('✅ KI-Prompt erfolgreich in die Zwischenablage kopiert!');
-                    btn.setButtonText('✅ Kopiert!');
-                    setTimeout(() => btn.setButtonText('📋 Prompt kopieren'), 2500);
+                .onClick(() => {
+                    void (async () => {
+                        await this.copyTextToClipboard(AI_CONVERTER_PROMPT);
+                        new Notice('✅ KI-Prompt erfolgreich in die Zwischenablage kopiert!');
+                        btn.setButtonText('✅ Kopiert!');
+                        window.setTimeout(() => btn.setButtonText('📋 Prompt kopieren'), 2500);
+                    })();
                 })
             );
 
@@ -251,11 +255,13 @@ export class SettingsTab extends PluginSettingTab {
             .setDesc('So muss eine Klausurdatei im Ordner "exams/" aufgebaut sein (Frontmatter, MC-Items mit [x], Freitext und Callouts).')
             .addButton(btn => btn
                 .setButtonText('📄 Beispiel kopieren')
-                .onClick(async () => {
-                    await this.copyTextToClipboard(SAMPLE_MARKDOWN_CODE);
-                    new Notice('✅ Markdown-Beispiel in die Zwischenablage kopiert!');
-                    btn.setButtonText('✅ Kopiert!');
-                    setTimeout(() => btn.setButtonText('📄 Beispiel kopieren'), 2500);
+                .onClick(() => {
+                    void (async () => {
+                        await this.copyTextToClipboard(SAMPLE_MARKDOWN_CODE);
+                        new Notice('✅ Markdown-Beispiel in die Zwischenablage kopiert!');
+                        btn.setButtonText('✅ Kopiert!');
+                        window.setTimeout(() => btn.setButtonText('📄 Beispiel kopieren'), 2500);
+                    })();
                 })
             );
 
@@ -270,16 +276,6 @@ export class SettingsTab extends PluginSettingTab {
     private async copyTextToClipboard(text: string): Promise<void> {
         if (typeof navigator !== 'undefined' && navigator.clipboard) {
             await navigator.clipboard.writeText(text);
-        } else {
-            // Fallback for environments where clipboard API is restricted
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.opacity = '0';
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
         }
     }
 }

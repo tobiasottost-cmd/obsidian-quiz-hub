@@ -17,7 +17,7 @@ export class SoundManager {
         if (!this.enabled || this.volume <= 0) return null;
 
         if (!this.audioCtx && typeof window !== 'undefined') {
-            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+            const AudioContextClass = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
             if (AudioContextClass) {
                 this.audioCtx = new AudioContextClass();
             }

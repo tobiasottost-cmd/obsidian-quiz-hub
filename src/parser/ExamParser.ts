@@ -15,7 +15,7 @@ export class ExamParser {
      * - NO regex lookbehinds.
      * - Pure string/regex processing.
      */
-    public static parse(content: string, sourceFilePath: string, cachedFrontmatter?: Record<string, any>): ParsedExamFile {
+    public static parse(content: string, sourceFilePath: string, cachedFrontmatter?: Record<string, unknown>): ParsedExamFile {
         const normalized = content.replace(/\r\n/g, '\n');
         const { frontmatter, body } = this.extractFrontmatter(normalized, cachedFrontmatter);
         const questions = this.parseQuestions(body, sourceFilePath);
@@ -31,7 +31,7 @@ export class ExamParser {
     /**
      * Extracts YAML frontmatter without lookbehind regexes.
      */
-    private static extractFrontmatter(content: string, cached?: Record<string, any>): { frontmatter: ExamFrontmatter; body: string } {
+    private static extractFrontmatter(content: string, cached?: Record<string, unknown>): { frontmatter: ExamFrontmatter; body: string } {
         let frontmatter: ExamFrontmatter = {
             type: 'exam',
             module: 'Allgemein',
@@ -58,14 +58,14 @@ export class ExamParser {
             frontmatter = {
                 ...frontmatter,
                 type: cached.type === 'quiz' ? 'quiz' : 'exam',
-                module: cached.module || frontmatter.module,
-                semester: cached.semester || frontmatter.semester,
-                title: cached.title || frontmatter.title,
+                module: typeof cached.module === 'string' ? cached.module : frontmatter.module,
+                semester: typeof cached.semester === 'string' ? cached.semester : frontmatter.semester,
+                title: typeof cached.title === 'string' ? cached.title : frontmatter.title,
                 timeLimitMinutes: cached.timeLimitMinutes !== undefined ? Number(cached.timeLimitMinutes) : frontmatter.timeLimitMinutes,
-                passingScore: cached.passingScore !== undefined ? cached.passingScore : frontmatter.passingScore,
+                passingScore: typeof cached.passingScore === 'string' || typeof cached.passingScore === 'number' ? cached.passingScore : frontmatter.passingScore,
                 shuffleQuestions: cached.shuffleQuestions !== undefined ? Boolean(cached.shuffleQuestions) : frontmatter.shuffleQuestions,
                 shuffleOptions: cached.shuffleOptions !== undefined ? Boolean(cached.shuffleOptions) : frontmatter.shuffleOptions,
-                tags: Array.isArray(cached.tags) ? cached.tags : frontmatter.tags
+                tags: Array.isArray(cached.tags) ? (cached.tags as string[]) : frontmatter.tags
             };
         }
 
@@ -225,7 +225,7 @@ export class ExamParser {
             if (typeMatch) {
                 const t = typeMatch[1].toLowerCase();
                 if (t === 'multiple-choice' || t === 'single-choice' || t === 'freetext' || t === 'cloze') {
-                    explicitType = t as QuestionType;
+                    explicitType = t;
                     continue;
                 }
             }

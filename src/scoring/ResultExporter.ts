@@ -53,7 +53,7 @@ export class ResultExporter {
             if (!folder) {
                 try {
                     await app.vault.createFolder(normalized);
-                } catch (e) {
+                } catch {
                     // Ignore if folder was created concurrently
                 }
             }

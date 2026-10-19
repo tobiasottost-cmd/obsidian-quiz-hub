@@ -22,7 +22,7 @@ export class ConfettiTrigger {
     }
 
     private static fireStandardBurst(): void {
-        confetti({
+        void confetti({
             particleCount: 100,
             spread: 70,
             origin: { y: 0.6 },
@@ -38,7 +38,7 @@ export class ConfettiTrigger {
         };
 
         function fire(particleRatio: number, opts: confetti.Options) {
-            confetti({
+            void confetti({
                 ...defaults,
                 ...opts,
                 particleCount: Math.floor(count * particleRatio)

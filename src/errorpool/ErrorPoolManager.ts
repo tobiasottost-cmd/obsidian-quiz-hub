@@ -1,4 +1,4 @@
-import { ActiveSessionState, ErrorPoolItem, PluginSettingsData, SessionResult } from '../types';
+import { ActiveSessionState, PluginSettingsData, SessionResult } from '../types';
 
 export class ErrorPoolManager {
     /**

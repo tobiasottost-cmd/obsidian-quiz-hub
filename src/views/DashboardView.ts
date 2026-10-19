@@ -107,14 +107,16 @@ export class DashboardView extends ItemView {
         const actionsRow = banner.createDiv({ cls: 'resume-actions' });
         const resumeBtn = actionsRow.createEl('button', { cls: 'mod-cta', text: 'Fortsetzen' });
         resumeBtn.addEventListener('click', () => {
-            this.plugin.startExamWithSession(active);
+            void this.plugin.startExamWithSession(active);
         });
 
         const discardBtn = actionsRow.createEl('button', { cls: 'mod-warning', text: 'Verwerfen' });
-        discardBtn.addEventListener('click', async () => {
-            this.plugin.settings.activeSession = null;
-            await this.plugin.saveSettings();
-            this.render();
+        discardBtn.addEventListener('click', () => {
+            void (async () => {
+                this.plugin.settings.activeSession = null;
+                await this.plugin.saveSettings();
+                this.render();
+            })();
         });
     }
 
@@ -142,7 +144,7 @@ export class DashboardView extends ItemView {
                     this.plugin.settings.errorPool
                 );
                 if (session) {
-                    this.plugin.startExamWithSession(session);
+                    void this.plugin.startExamWithSession(session);
                 }
             });
         } else {
@@ -241,7 +243,7 @@ export class DashboardView extends ItemView {
                 modules: Array.from(selectedModules),
                 questionCount: qCount
             });
-            this.plugin.startExamWithSession(session);
+            void this.plugin.startExamWithSession(session);
         });
     }
 
@@ -304,7 +306,7 @@ export class DashboardView extends ItemView {
 
                 startBtn.addEventListener('click', () => {
                     const session = ExamGenerator.fromParsedExam(exam);
-                    this.plugin.startExamWithSession(session);
+                    void this.plugin.startExamWithSession(session);
                 });
             }
         }

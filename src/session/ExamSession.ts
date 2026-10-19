@@ -20,12 +20,12 @@ export class ExamSession {
 
         // Auto-save on window unload or when app switches to background (mobile capacitor)
         this.beforeUnloadHandler = () => {
-            this.triggerAutoSave();
+            void this.triggerAutoSave();
         };
 
         this.visibilityChangeHandler = () => {
             if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-                this.triggerAutoSave();
+                void this.triggerAutoSave();
             }
         };
 
@@ -88,7 +88,7 @@ export class ExamSession {
         this.stopAutoSaveTimer();
         // 15 seconds auto-save requirement from specification v3
         this.autoSaveInterval = window.setInterval(() => {
-            this.triggerAutoSave();
+            void this.triggerAutoSave();
         }, 15000);
     }
 

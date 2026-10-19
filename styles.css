@@ -57,9 +57,11 @@
 /* ==========================================================================
    Dashboard View Styles
    ========================================================================== */
+.view-content .exam-hub-dashboard-container,
+.workspace-leaf-content .exam-hub-dashboard-container,
 .exam-hub-dashboard-container {
     height: 100%;
-    overflow-y: auto !important;
+    overflow-y: auto;
     overflow-x: hidden;
     padding: 20px;
     max-width: 1000px;
@@ -446,7 +448,6 @@
     padding: 8px 0 2px 0;
     margin-top: 8px;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
 }
 
 .runner-tile-item {
@@ -485,8 +486,9 @@
     color: var(--text-on-accent, #ffffff);
 }
 
+.runner-question-tiles-strip .runner-tile-item.is-flagged,
 .runner-tile-item.is-flagged {
-    border-color: #f59e0b !important;
+    border-color: #f59e0b;
 }
 
 .runner-tile-item.is-flagged .tile-flag-icon {
@@ -787,13 +789,21 @@
     font-weight: 700;
 }
 
+.exam-runner-footer-nav button.nav-btn.mod-cta.is-final-submit,
 .exam-runner-footer-nav .nav-btn.is-final-submit {
-    background-color: #22c55e !important;
-    border-color: #22c55e !important;
-    color: #ffffff !important;
+    background-color: #22c55e;
+    border-color: #22c55e;
+    color: #ffffff;
     font-weight: 700;
     font-size: 1rem;
     animation: pulseSubmit 1.5s infinite alternate;
+}
+
+.exam-runner-footer-nav button.nav-btn.mod-cta.is-final-submit:hover,
+.exam-runner-footer-nav .nav-btn.is-final-submit:hover {
+    background-color: #16a34a;
+    border-color: #16a34a;
+    color: #ffffff;
 }
 
 @keyframes pulseSubmit {
@@ -814,9 +824,11 @@
 /* ==========================================================================
    Result View Styles (Scrollable & Responsive)
    ========================================================================== */
+.view-content .exam-result-container,
+.workspace-leaf-content .exam-result-container,
 .exam-result-container {
     height: 100%;
-    overflow-y: auto !important;
+    overflow-y: auto;
     overflow-x: hidden;
     padding: 24px;
     box-sizing: border-box;

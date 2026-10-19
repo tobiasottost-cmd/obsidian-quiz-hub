@@ -1,6 +1,6 @@
 import { Component, ItemView, Notice, setIcon, WorkspaceLeaf } from 'obsidian';
 import type ExamQuizHubPlugin from '../main';
-import { ActiveSessionState, SessionResult } from '../types';
+import { ActiveSessionState, QuestionDefinition, QuestionEvaluation, SessionResult } from '../types';
 import { ScoringEngine } from '../scoring/ScoringEngine';
 import { ResultExporter } from '../scoring/ResultExporter';
 import { ConfettiTrigger } from '../gamification/ConfettiTrigger';
@@ -66,7 +66,7 @@ export class ResultView extends ItemView {
         this.renderScoreBanner(inner);
         this.renderActionButtons(inner);
         this.renderReviewQuickNav(inner);
-        this.renderQuestionsReview(inner);
+        void this.renderQuestionsReview(inner);
     }
 
     private renderReviewQuickNav(container: HTMLElement): void {
@@ -112,7 +112,7 @@ export class ResultView extends ItemView {
         const infoCol = topRow.createDiv({ cls: 'score-info-col' });
         infoCol.createEl('h2', { text: this.result.examTitle });
 
-        const statusBadge = infoCol.createDiv({
+        infoCol.createDiv({
             cls: `result-status-badge ${this.result.passed ? 'badge-passed' : 'badge-failed'}`,
             text: this.result.passed ? '🎉 Bestanden' : '❌ Nicht bestanden'
         });
@@ -137,20 +137,22 @@ export class ResultView extends ItemView {
             cls: 'mod-cta result-action-btn',
             text: '📄 Ergebnis als Vault-Notiz speichern'
         });
-        exportBtn.addEventListener('click', async () => {
-            if (!this.result || !this.sessionState) return;
-            try {
-                const path = await ResultExporter.exportToVault(
-                    this.app,
-                    this.result,
-                    this.sessionState,
-                    this.plugin.settings.resultsFolderPath
-                );
-                new Notice(`Klausurbericht erfolgreich gespeichert:\n${path}`);
-            } catch (err) {
-                console.error('Fehler beim Exportieren des Ergebnisses:', err);
-                new Notice('Fehler beim Speichern der Notiz.');
-            }
+        exportBtn.addEventListener('click', () => {
+            void (async () => {
+                if (!this.result || !this.sessionState) return;
+                try {
+                    const path = await ResultExporter.exportToVault(
+                        this.app,
+                        this.result,
+                        this.sessionState,
+                        this.plugin.settings.resultsFolderPath
+                    );
+                    new Notice(`Klausurbericht erfolgreich gespeichert:\n${path}`);
+                } catch (err) {
+                    console.error('Fehler beim Exportieren des Ergebnisses:', err);
+                    new Notice('Fehler beim Speichern der Notiz.');
+                }
+            })();
         });
 
         const failedCount = this.result?.questionEvaluations.filter(e => !e.isFullyCorrect).length || 0;
@@ -165,7 +167,7 @@ export class ResultView extends ItemView {
                     this.plugin.settings.errorPool
                 );
                 if (session) {
-                    this.plugin.startExamWithSession(session);
+                    void this.plugin.startExamWithSession(session);
                 }
             });
         }
@@ -175,7 +177,7 @@ export class ResultView extends ItemView {
             text: '← Zurück zum Dashboard'
         });
         dashboardBtn.addEventListener('click', () => {
-            this.plugin.openDashboard(this.leaf);
+            void this.plugin.openDashboard(this.leaf);
         });
     }
 
@@ -201,11 +203,11 @@ export class ResultView extends ItemView {
 
             // Card Header
             const header = card.createDiv({ cls: 'review-card-header' });
-            const titleSpan = header.createEl('span', { cls: 'review-card-title' });
+            const titleSpan = header.createSpan({ cls: 'review-card-title' });
             titleSpan.createSpan({ cls: 'q-index', text: `Aufgabe ${i + 1}: ` });
             titleSpan.createSpan({ text: q.prompt.split('\n')[0] });
 
-            const pointsBadge = header.createSpan({
+            header.createSpan({
                 cls: `review-points-badge ${isFull ? 'is-full' : 'is-not-full'}`,
                 text: `${earned} / ${possible} Pkt.`
             });
@@ -228,14 +230,14 @@ export class ResultView extends ItemView {
                     const iconSpan = itemRow.createSpan({ cls: 'mc-check-icon' });
                     setIcon(iconSpan, item.userSelected ? 'check-square' : 'square');
 
-                    const textSpan = itemRow.createSpan({ cls: 'mc-item-text', text: item.text });
+                    itemRow.createSpan({ cls: 'mc-item-text', text: item.text });
 
-                    const statusTag = itemRow.createSpan({
+                    itemRow.createSpan({
                         cls: `mc-item-status-tag ${item.earnedPoint ? 'tag-correct' : 'tag-wrong'}`,
                         text: item.earnedPoint ? '+1 Pkt.' : '0 Pkt.'
                     });
 
-                    const truthBadge = itemRow.createSpan({
+                    itemRow.createSpan({
                         cls: `mc-truth-badge ${item.isCorrect ? 'is-true' : 'is-false'}`,
                         text: item.isCorrect ? 'Wahr' : 'Falsch'
                     });
@@ -255,7 +257,7 @@ export class ResultView extends ItemView {
         }
     }
 
-    private renderFreetextSelfAssessment(container: HTMLElement, q: any, evalRec: any): void {
+    private renderFreetextSelfAssessment(container: HTMLElement, q: QuestionDefinition, evalRec?: QuestionEvaluation): void {
         const selfAssess = container.createDiv({ cls: 'freetext-self-assessment' });
 
         const userAns = this.sessionState?.userAnswers[q.id]?.freetextAnswer || '*(Keine Eingabe)*';

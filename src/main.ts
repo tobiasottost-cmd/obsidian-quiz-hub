@@ -49,7 +49,7 @@ export default class ExamQuizHubPlugin extends Plugin {
 
         // Ribbon icon in left sidebar
         this.addRibbonIcon('graduation-cap', 'Exam and Quiz Hub', () => {
-            this.openDashboard();
+            void this.openDashboard();
         });
 
         // Commands
@@ -57,7 +57,7 @@ export default class ExamQuizHubPlugin extends Plugin {
             id: 'open-exam-hub-dashboard',
             name: 'Klausur-Dashboard öffnen',
             callback: () => {
-                this.openDashboard();
+                void this.openDashboard();
             }
         });
 
@@ -72,9 +72,9 @@ export default class ExamQuizHubPlugin extends Plugin {
                         modules,
                         questionCount: 15
                     });
-                    this.startExamWithSession(session);
+                    void this.startExamWithSession(session);
                 } else {
-                    this.openDashboard();
+                    void this.openDashboard();
                 }
             }
         });
@@ -88,9 +88,9 @@ export default class ExamQuizHubPlugin extends Plugin {
                     this.settings.errorPool
                 );
                 if (session) {
-                    this.startExamWithSession(session);
+                    void this.startExamWithSession(session);
                 } else {
-                    this.openDashboard();
+                    void this.openDashboard();
                 }
             }
         });
@@ -105,11 +105,13 @@ export default class ExamQuizHubPlugin extends Plugin {
                     this.app,
                     this.settings.activeSession,
                     () => {
-                        this.startExamWithSession(this.settings.activeSession!);
+                        void this.startExamWithSession(this.settings.activeSession!);
                     },
-                    async () => {
-                        this.settings.activeSession = null;
-                        await this.saveSettings();
+                    () => {
+                        void (async () => {
+                            this.settings.activeSession = null;
+                            await this.saveSettings();
+                        })();
                     }
                 ).open();
             }
@@ -126,7 +128,8 @@ export default class ExamQuizHubPlugin extends Plugin {
     }
 
     public async loadSettings(): Promise<void> {
-        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+        const savedData = (await this.loadData()) as unknown as Partial<PluginSettingsData> | null;
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, savedData || {});
     }
 
     public async saveSettings(): Promise<void> {
@@ -149,7 +152,7 @@ export default class ExamQuizHubPlugin extends Plugin {
             active: true
         });
 
-        workspace.revealLeaf(leaf);
+        await workspace.revealLeaf(leaf);
     }
 
     /**
@@ -170,7 +173,7 @@ export default class ExamQuizHubPlugin extends Plugin {
             });
         }
 
-        workspace.revealLeaf(leaf);
+        await workspace.revealLeaf(leaf);
 
         const runnerView = leaf.view as ExamRunnerView;
         const examSession = new ExamSession(sessionState, async (updatedState) => {
@@ -214,7 +217,7 @@ export default class ExamQuizHubPlugin extends Plugin {
             active: true
         });
 
-        workspace.revealLeaf(leaf);
+        await workspace.revealLeaf(leaf);
         const resultView = leaf.view as ResultView;
         resultView.setResult(result, sessionState);
     }
