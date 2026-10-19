@@ -1,0 +1,8 @@
+# Dependencies
+node_modules/
+
+# Build artifacts and temp files
+test-bundle.cjs
+*.log
+.DS_Store
+Thumbs.db

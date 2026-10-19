@@ -1,0 +1,156 @@
+import { ExamParser } from '../src/parser/ExamParser';
+import { ScoringEngine } from '../src/scoring/ScoringEngine';
+import { ExamGenerator } from '../src/session/ExamGenerator';
+import { ErrorPoolManager } from '../src/errorpool/ErrorPoolManager';
+import { GamificationEngine } from '../src/gamification/GamificationEngine';
+import { ActiveSessionState, DEFAULT_SETTINGS, PluginSettingsData } from '../src/types';
+
+function assert(condition: boolean, message: string) {
+    if (!condition) {
+        console.error(`❌ ASSERTION FAILED: ${message}`);
+        process.exit(1);
+    } else {
+        console.log(`✅ ${message}`);
+    }
+}
+
+console.log('--- Testing ExamParser ---');
+
+const sampleMarkdown = `---
+type: exam
+module: M1
+semester: WiSe26/27
+title: Probeklausur Konditionierung
+timeLimitMinutes: 45
+passingScore: 60%
+shuffleQuestions: true
+shuffleOptions: true
+---
+
+## Welche Aussagen zur klassischen Konditionierung treffen zu? ^q-kond-01
+type: multiple-choice
+points: 5
+
+- [x] Ein unkonditionierter Reiz (UCS) löst reflexartig eine UCR aus.
+- [ ] Extinktion löscht die Gedächtnisspur vollständig.
+- [x] Spontanerholung beschreibt das Wiederauftreten der CR nach einer Pause.
+- [ ] Generalisierung bedeutet, dass nur der identische Reiz wirkt.
+- [x] Konditionierung höherer Ordnung baut auf einem konditionierten Reiz auf.
+
+> [!explanation]
+> Extinktion ist Hemmungslernen (Inhibition). Generalisierung reagiert auch auf Reizähnlichkeiten.
+> ![[assets/konditionierungs_schema.png]]
+
+---
+
+## Erkläre das Modell der Kognitiven Dissonanz nach Festinger. ^q-diss-02
+type: freetext
+points: 3
+
+Musterloesung:
+Kognitive Dissonanz beschreibt einen aversiven Spannungszustand bei widersprüchlichen Kognitionen.
+Kriterien:
+1. Definition des aversiven Spannungszustands (1P)
+2. Ursache: Widerspruch kognitiver Elemente (1P)
+3. Mindestens eine Reduktionsstrategie genannt (1P)
+
+> [!explanation]
+> Maximale Punktzahl: 3 Punkte.
+`;
+
+const parsed = ExamParser.parse(sampleMarkdown, 'exams/M1/test.md');
+
+assert(parsed.frontmatter.title === 'Probeklausur Konditionierung', 'Frontmatter title correctly parsed');
+assert(parsed.frontmatter.module === 'M1', 'Frontmatter module correctly parsed');
+assert(parsed.frontmatter.timeLimitMinutes === 45, 'Time limit correctly parsed');
+assert(parsed.questions.length === 2, 'Parsed exactly 2 questions');
+
+const q1 = parsed.questions[0];
+assert(q1.id === 'q-kond-01', 'Question 1 Block-ID priority matched (^q-kond-01)');
+assert(q1.type === 'multiple-choice', 'Question 1 is multiple-choice');
+assert(q1.options?.length === 5, 'Question 1 has exactly 5 options');
+assert(q1.options?.filter(o => o.isCorrect).length === 3, 'Question 1 has exactly 3 correct options ([x])');
+assert(q1.explanation?.includes('Extinktion ist Hemmungslernen'), 'Question 1 explanation callout extracted');
+
+const q2 = parsed.questions[1];
+assert(q2.id === 'q-diss-02', 'Question 2 Block-ID priority matched (^q-diss-02)');
+assert(q2.type === 'freetext', 'Question 2 is freetext');
+assert(q2.modelAnswer?.includes('aversiven Spannungszustand') === true, 'Question 2 model answer extracted');
+assert(q2.rubric?.length === 3, 'Question 2 rubric has 3 criteria');
+
+console.log('\n--- Testing ScoringEngine (5-Item MC Logic) ---');
+
+const sessionState: ActiveSessionState = {
+    sessionId: 'test-session',
+    examTitle: 'Test Exam',
+    module: 'M1',
+    startTime: Date.now(),
+    timeLimitSeconds: 2700,
+    remainingSeconds: 1500,
+    currentQuestionIndex: 0,
+    questions: [q1, q2],
+    flaggedQuestionIds: [],
+    userAnswers: {}
+};
+
+// Case 1: All 5 MC items correctly marked/unmarked -> 5/5 points
+const correctOptionIds = q1.options!.filter(o => o.isCorrect).map(o => o.id);
+sessionState.userAnswers[q1.id] = { selectedOptionIds: correctOptionIds };
+sessionState.userAnswers[q2.id] = { freetextAnswer: 'Meine Ausarbeitung', freetextAssignedPoints: 3 };
+
+let result = ScoringEngine.evaluate(sessionState, 60);
+assert(result.questionEvaluations[0].earnedPoints === 5, 'MC question with all correct selections gets 5 points');
+assert(result.questionEvaluations[0].isFullyCorrect === true, 'MC question marked isFullyCorrect');
+assert(result.questionEvaluations[1].earnedPoints === 3, 'Freetext question gets 3 points');
+assert(result.totalPossiblePoints === 8, 'Total possible is 8 points (5 MC + 3 freetext)');
+assert(result.earnedPoints === 8, 'Earned 8/8 points (100%)');
+assert(result.passed === true, 'Result passed');
+// XP calculation: 2 answered (20) + 1 perfect MC (5) + passed (50) + >=85% (100) = 175 XP
+assert(result.xpEarned === 175, `XP earned is 175 (got ${result.xpEarned})`);
+
+// Case 2: 1 error in MC (missed 1 true option) -> 4/5 points
+sessionState.userAnswers[q1.id] = { selectedOptionIds: [correctOptionIds[0], correctOptionIds[1]] }; // omitted 3rd
+result = ScoringEngine.evaluate(sessionState, 60);
+assert(result.questionEvaluations[0].earnedPoints === 4, 'MC question with 1 missed item gets 4/5 points');
+assert(result.questionEvaluations[0].isFullyCorrect === false, 'MC question with 4 points is not fully correct');
+
+console.log('\n--- Testing ErrorPoolManager (2x Consecutive Success Mastery) ---');
+
+const settings: PluginSettingsData = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+
+// Process session with error in q1
+ErrorPoolManager.processSessionResults(settings, sessionState, result);
+assert(settings.errorPool[q1.id] !== undefined, 'Failed question q1 was added to error pool');
+assert(settings.errorPool[q1.id].failCount === 1, 'q1 failCount is 1');
+assert(settings.errorPool[q1.id].consecutiveSuccess === 0, 'q1 consecutiveSuccess is 0');
+
+// Now simulate an error pool re-training session where user gets q1 fully right (1st time)
+const errorSessionState: ActiveSessionState = {
+    ...sessionState,
+    isErrorPoolSession: true,
+    userAnswers: {
+        [q1.id]: { selectedOptionIds: correctOptionIds }
+    }
+};
+let errorResult = ScoringEngine.evaluate(errorSessionState, 60);
+ErrorPoolManager.processSessionResults(settings, errorSessionState, errorResult);
+assert(settings.errorPool[q1.id] !== undefined, 'q1 still in error pool after 1st success');
+assert(settings.errorPool[q1.id].consecutiveSuccess === 1, 'q1 consecutiveSuccess incremented to 1');
+
+// Now simulate 2nd consecutive success on q1
+ErrorPoolManager.processSessionResults(settings, errorSessionState, errorResult);
+assert(settings.errorPool[q1.id] === undefined, 'q1 removed from error pool after 2x consecutive successes!');
+
+console.log('\n--- Testing GamificationEngine ---');
+
+const level1 = GamificationEngine.calculateLevel(0);
+assert(level1.level === 1, '0 XP is Level 1');
+
+const level2 = GamificationEngine.calculateLevel(260);
+assert(level2.level === 2, '260 XP reaches Level 2');
+
+// Streak tracking
+const streakInfo = GamificationEngine.recordActivity(settings);
+assert(streakInfo.streakDays === 1, 'Initial streak is 1 day');
+
+console.log('\n🎉 ALL CORE LOGIC AND SPECIFICATION UNIT TESTS PASSED!');

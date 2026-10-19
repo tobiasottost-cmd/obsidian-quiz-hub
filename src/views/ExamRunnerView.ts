@@ -1,0 +1,669 @@
+import { Component, ItemView, Modal, setIcon, WorkspaceLeaf } from 'obsidian';
+import type ExamQuizHubPlugin from '../main';
+import { ExamSession } from '../session/ExamSession';
+import { MarkdownUtils } from '../parser/MarkdownUtils';
+import { QuestionDefinition } from '../types';
+
+export const VIEW_TYPE_EXAM_RUNNER = 'exam-quiz-hub-runner';
+
+export class ExamRunnerView extends ItemView {
+    private plugin: ExamQuizHubPlugin;
+    private session: ExamSession | null = null;
+    private isFocusMode: boolean = false;
+    private isDrawerOpen: boolean = false;
+    private keydownHandler: ((e: KeyboardEvent) => void) | null = null;
+    private renderComponent: Component = new Component();
+
+    constructor(leaf: WorkspaceLeaf, plugin: ExamQuizHubPlugin) {
+        super(leaf);
+        this.plugin = plugin;
+    }
+
+    public getViewType(): string {
+        return VIEW_TYPE_EXAM_RUNNER;
+    }
+
+    public getDisplayText(): string {
+        return this.session ? `Klausur: ${this.session.getState().examTitle}` : 'Klausur-Simulation';
+    }
+
+    public getIcon(): string {
+        return 'pencil';
+    }
+
+    public setSession(session: ExamSession): void {
+        this.session = session;
+        this.renderComponent.load();
+
+        // Subscribe to session ticks and updates
+        this.session.onTick(() => {
+            this.updateTimerDisplay();
+        });
+
+        this.session.onQuestionChanged(() => {
+            this.renderQuestionContent();
+            this.updateHeaderProgress();
+            this.updateMatrix();
+            this.updateTilesStrip();
+            this.updateFooterNavButtons();
+            this.scrollToTop();
+        });
+
+        this.session.onTimeExpired(() => {
+            this.handleTimeExpired();
+        });
+
+        this.setupKeyboardShortcuts();
+        this.render();
+    }
+
+    public async onOpen(): Promise<void> {
+        if (!this.session) {
+            // If opened without active session, check if active session in settings exists
+            if (this.plugin.settings.activeSession) {
+                this.plugin.startExamWithSession(this.plugin.settings.activeSession);
+            }
+        }
+    }
+
+    public async onClose(): Promise<void> {
+        this.removeKeyboardShortcuts();
+        this.renderComponent.unload();
+        if (this.session) {
+            await this.session.triggerAutoSave();
+        }
+    }
+
+    private setupKeyboardShortcuts(): void {
+        this.removeKeyboardShortcuts();
+
+        this.keydownHandler = (e: KeyboardEvent) => {
+            if (!this.session) return;
+
+            // Don't trigger shortcuts if focus is inside an input or textarea
+            const target = e.target as HTMLElement;
+            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
+                return;
+            }
+
+            const key = e.key.toLowerCase();
+            const currentQ = this.session.getCurrentQuestion();
+            const currentIdx = this.session.getCurrentIndex();
+            const totalQuestions = this.session.getTotalQuestions();
+
+            // 1-5 for options A-E in MC
+            if (['1', '2', '3', '4', '5'].includes(key)) {
+                const optIndex = parseInt(key) - 1;
+                if (currentQ && currentQ.options && optIndex < currentQ.options.length) {
+                    const opt = currentQ.options[optIndex];
+                    if (currentQ.type === 'single-choice') {
+                        this.session.selectSingleOption(currentQ.id, opt.id);
+                    } else {
+                        this.session.toggleOption(currentQ.id, opt.id);
+                    }
+                    this.plugin.soundManager.playClickSound();
+                    this.renderQuestionOptions(currentQ);
+                    this.updateMatrix();
+                    this.updateTilesStrip();
+                    e.preventDefault();
+                }
+            } else if (key === 'j' || e.key === 'ArrowRight') {
+                if (currentIdx === totalQuestions - 1) {
+                    this.confirmAndSubmit();
+                } else {
+                    this.session.nextQuestion();
+                }
+                e.preventDefault();
+            } else if (key === 'k' || e.key === 'ArrowLeft') {
+                this.session.prevQuestion();
+                e.preventDefault();
+            } else if (key === 'm') {
+                if (currentQ) {
+                    this.session.toggleFlag(currentQ.id);
+                    this.updateFlagButton();
+                    this.updateTilesStrip();
+                    this.updateMatrix();
+                    this.updateFooterNavButtons();
+                    e.preventDefault();
+                }
+            } else if (e.key === 'Enter' && e.ctrlKey) {
+                this.confirmAndSubmit();
+                e.preventDefault();
+            }
+        };
+
+        this.registerDomEvent(window, 'keydown', this.keydownHandler);
+    }
+
+    private removeKeyboardShortcuts(): void {
+        if (this.keydownHandler) {
+            window.removeEventListener('keydown', this.keydownHandler);
+            this.keydownHandler = null;
+        }
+    }
+
+    private render(): void {
+        const container = this.contentEl;
+        container.empty();
+        container.className = 'exam-runner-container';
+        if (this.isFocusMode) {
+            container.addClass('is-focus-mode');
+        }
+
+        if (!this.session) {
+            container.createEl('p', { text: 'Keine aktive Klausursitzung.' });
+            return;
+        }
+
+        this.renderStickyHeader(container);
+
+        const bodyWrapper = container.createDiv({ cls: 'exam-runner-body-wrapper' });
+        this.renderMatrixDrawer(bodyWrapper);
+        this.renderQuestionArea(bodyWrapper);
+        this.renderFooterNavigation(container);
+    }
+
+    private renderStickyHeader(container: HTMLElement): void {
+        const header = container.createDiv({ cls: 'exam-runner-sticky-header' });
+
+        const topRow = header.createDiv({ cls: 'runner-header-top-row' });
+
+        // Left: Back button & Title
+        const leftGroup = topRow.createDiv({ cls: 'header-left-group' });
+        const backBtn = leftGroup.createEl('button', { cls: 'icon-btn runner-back-btn', title: 'Zurück zum Dashboard' });
+        setIcon(backBtn, 'arrow-left');
+        backBtn.addEventListener('click', () => {
+            this.confirmExit();
+        });
+
+        const titleDiv = leftGroup.createDiv({ cls: 'header-exam-titles' });
+        titleDiv.createEl('span', { cls: 'exam-title-text', text: this.session?.getState().examTitle || 'Klausur' });
+        titleDiv.createEl('span', { cls: 'exam-module-badge', text: this.session?.getState().module || 'Allgemein' });
+
+        // Center: Timer
+        const timerDiv = topRow.createDiv({ cls: 'runner-timer-container', attr: { id: 'exam-runner-timer' } });
+        const timerIcon = timerDiv.createSpan({ cls: 'timer-icon' });
+        setIcon(timerIcon, 'clock');
+        timerDiv.createSpan({ cls: 'timer-text', text: this.formatTime(this.session?.getRemainingSeconds() || 0) });
+
+        // Right: Tools & Submit
+        const rightGroup = topRow.createDiv({ cls: 'header-right-group' });
+
+        const flagBtn = rightGroup.createEl('button', {
+            cls: 'icon-btn flag-toggle-btn',
+            attr: { id: 'runner-flag-btn', title: 'Frage markieren (M)' }
+        });
+        setIcon(flagBtn, 'flag');
+        flagBtn.addEventListener('click', () => {
+            if (this.session) {
+                const q = this.session.getCurrentQuestion();
+                this.session.toggleFlag(q.id);
+                this.updateFlagButton();
+                this.updateTilesStrip();
+                this.updateMatrix();
+                this.updateFooterNavButtons();
+            }
+        });
+
+        const matrixBtn = rightGroup.createEl('button', {
+            cls: 'icon-btn matrix-toggle-btn',
+            attr: { title: 'Fragen-Matrix öffnen' }
+        });
+        setIcon(matrixBtn, 'grid');
+        matrixBtn.addEventListener('click', () => {
+            this.isDrawerOpen = !this.isDrawerOpen;
+            const drawer = this.containerEl.querySelector('.exam-matrix-drawer');
+            if (drawer) {
+                drawer.classList.toggle('is-open', this.isDrawerOpen);
+            }
+        });
+
+        const focusBtn = rightGroup.createEl('button', {
+            cls: 'icon-btn focus-toggle-btn',
+            attr: { title: 'Fokusmodus umschalten' }
+        });
+        setIcon(focusBtn, 'maximize-2');
+        focusBtn.addEventListener('click', () => {
+            this.isFocusMode = !this.isFocusMode;
+            this.containerEl.children[1].classList.toggle('is-focus-mode', this.isFocusMode);
+        });
+
+        const submitBtn = rightGroup.createEl('button', {
+            cls: 'mod-cta runner-submit-btn',
+            text: 'Abgeben'
+        });
+        submitBtn.addEventListener('click', () => {
+            this.confirmAndSubmit();
+        });
+
+        // Progress bar row
+        const progressRow = header.createDiv({ cls: 'runner-progress-row' });
+        const progressInfo = progressRow.createDiv({ cls: 'progress-info-text', attr: { id: 'runner-progress-info' } });
+        this.updateHeaderProgressText(progressInfo);
+
+        const barBg = progressRow.createDiv({ cls: 'runner-progress-bar-bg' });
+        barBg.createDiv({ cls: 'runner-progress-bar-fill', attr: { id: 'runner-progress-fill' } });
+        this.updateProgressBar();
+
+        // Question tiles strip (Schnellnavigation Kacheln)
+        const tilesStrip = header.createDiv({ cls: 'runner-question-tiles-strip', attr: { id: 'runner-tiles-strip' } });
+        this.populateTilesStrip(tilesStrip);
+    }
+
+    private populateTilesStrip(stripEl: HTMLElement): void {
+        stripEl.empty();
+        if (!this.session) return;
+
+        const questions = this.session.getState().questions;
+        const currentIdx = this.session.getCurrentIndex();
+
+        questions.forEach((q, idx) => {
+            const isAnswered = this.session!.isAnswered(q.id);
+            const isFlagged = this.session!.isFlagged(q.id);
+            const isCurrent = idx === currentIdx;
+
+            const tile = stripEl.createEl('button', {
+                cls: `runner-tile-item ${isCurrent ? 'is-current' : ''} ${isAnswered ? 'is-answered' : ''} ${isFlagged ? 'is-flagged' : ''}`,
+                attr: { id: `runner-tile-${idx}`, title: `Frage ${idx + 1}${isFlagged ? ' (Markiert)' : ''}${isAnswered ? ' (Beantwortet)' : ''}` }
+            });
+
+            tile.createSpan({ cls: 'tile-num', text: `${idx + 1}` });
+
+            if (isFlagged) {
+                const flagBadge = tile.createSpan({ cls: 'tile-flag-icon' });
+                setIcon(flagBadge, 'flag');
+            } else if (isAnswered) {
+                const checkBadge = tile.createSpan({ cls: 'tile-check-icon' });
+                setIcon(checkBadge, 'check');
+            }
+
+            tile.addEventListener('click', () => {
+                this.session!.goToQuestion(idx);
+            });
+        });
+
+        // Scroll active tile into view smoothly
+        const activeTile = stripEl.querySelector(`#runner-tile-${currentIdx}`);
+        if (activeTile) {
+            (activeTile as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
+
+    private updateTilesStrip(): void {
+        const strip = this.containerEl.querySelector('#runner-tiles-strip') as HTMLElement;
+        if (strip) {
+            this.populateTilesStrip(strip);
+        }
+    }
+
+    private renderMatrixDrawer(container: HTMLElement): void {
+        const drawer = container.createDiv({
+            cls: `exam-matrix-drawer ${this.isDrawerOpen ? 'is-open' : ''}`
+        });
+
+        const drawerHeader = drawer.createDiv({ cls: 'matrix-drawer-header' });
+        drawerHeader.createEl('h4', { text: 'Fragen-Übersicht' });
+
+        const closeBtn = drawerHeader.createEl('button', { cls: 'icon-btn close-drawer-btn' });
+        setIcon(closeBtn, 'x');
+        closeBtn.addEventListener('click', () => {
+            this.isDrawerOpen = false;
+            drawer.removeClass('is-open');
+        });
+
+        const grid = drawer.createDiv({ cls: 'matrix-grid', attr: { id: 'matrix-grid-container' } });
+        this.populateMatrixGrid(grid);
+    }
+
+    private populateMatrixGrid(grid: HTMLElement): void {
+        grid.empty();
+        if (!this.session) return;
+
+        const questions = this.session.getState().questions;
+        const currentIndex = this.session.getCurrentIndex();
+
+        questions.forEach((q, idx) => {
+            const isAnswered = this.session!.isAnswered(q.id);
+            const isFlagged = this.session!.isFlagged(q.id);
+            const isCurrent = idx === currentIndex;
+
+            const btn = grid.createEl('button', {
+                cls: `matrix-item-btn ${isCurrent ? 'is-current' : ''} ${isAnswered ? 'is-answered' : ''} ${isFlagged ? 'is-flagged' : ''}`,
+                text: `${idx + 1}`
+            });
+
+            if (isFlagged) {
+                const flagBadge = btn.createSpan({ cls: 'matrix-flag-indicator' });
+                setIcon(flagBadge, 'flag');
+            }
+
+            btn.addEventListener('click', () => {
+                this.session!.goToQuestion(idx);
+                if (window.innerWidth < 768) {
+                    this.isDrawerOpen = false;
+                    const drawer = this.containerEl.querySelector('.exam-matrix-drawer');
+                    if (drawer) drawer.removeClass('is-open');
+                }
+            });
+        });
+    }
+
+    private renderQuestionArea(container: HTMLElement): void {
+        const questionArea = container.createDiv({ cls: 'exam-runner-question-area', attr: { id: 'question-area-container' } });
+        this.renderQuestionContent();
+    }
+
+    private async renderQuestionContent(): Promise<void> {
+        const area = this.containerEl.querySelector('#question-area-container') as HTMLElement;
+        if (!area || !this.session) return;
+        area.empty();
+
+        const currentQ = this.session.getCurrentQuestion();
+        const currentIdx = this.session.getCurrentIndex();
+        const total = this.session.getTotalQuestions();
+        const isFlagged = this.session.isFlagged(currentQ.id);
+
+        const qCard = area.createDiv({ cls: 'question-content-card' });
+
+        // Meta header row with prominent Flag Button
+        const metaRow = qCard.createDiv({ cls: 'question-meta-row' });
+        const metaLeft = metaRow.createDiv({ cls: 'question-meta-left' });
+        metaLeft.createSpan({ cls: 'q-index-badge', text: `Aufgabe ${currentIdx + 1} von ${total}` });
+
+        const badgesGroup = metaLeft.createDiv({ cls: 'badges-group' });
+        badgesGroup.createSpan({ cls: 'q-points-badge', text: `${currentQ.points} Punkte` });
+        if (currentQ.blockId) {
+            badgesGroup.createSpan({ cls: 'q-block-id-badge', text: `^${currentQ.blockId}` });
+        }
+
+        // Prominent Flag button directly on question card
+        const cardFlagBtn = metaRow.createEl('button', {
+            cls: `question-card-flag-btn ${isFlagged ? 'is-flagged' : ''}`,
+            text: isFlagged ? '⚑ Für Überprüfung markiert' : '⚐ Frage markieren (M)',
+            attr: { title: 'Markierung für Review umschalten (M)' }
+        });
+        cardFlagBtn.addEventListener('click', () => {
+            this.session!.toggleFlag(currentQ.id);
+            this.updateFlagButton();
+            this.updateTilesStrip();
+            this.updateMatrix();
+            this.updateFooterNavButtons();
+            const nowFlagged = this.session!.isFlagged(currentQ.id);
+            cardFlagBtn.classList.toggle('is-flagged', nowFlagged);
+            cardFlagBtn.setText(nowFlagged ? '⚑ Für Überprüfung markiert' : '⚐ Frage markieren (M)');
+        });
+
+        // Markdown rendered prompt
+        const promptContainer = qCard.createDiv({ cls: 'question-prompt-container' });
+        await MarkdownUtils.render(
+            this.app,
+            currentQ.prompt,
+            promptContainer,
+            currentQ.sourceFilePath || '',
+            this.renderComponent
+        );
+
+        // Options or Input Container
+        const inputArea = qCard.createDiv({ cls: 'question-input-area', attr: { id: 'question-input-container' } });
+        this.renderQuestionOptions(currentQ);
+
+        this.updateFlagButton();
+    }
+
+    private renderQuestionOptions(q: QuestionDefinition): void {
+        const container = this.containerEl.querySelector('#question-input-container') as HTMLElement;
+        if (!container || !this.session) return;
+        container.empty();
+
+        const answerRecord = this.session.getAnswer(q.id);
+
+        if (q.type === 'multiple-choice' || q.type === 'single-choice') {
+            const options = q.options || [];
+            const isSingle = q.type === 'single-choice';
+            const selectedSet = new Set(answerRecord.selectedOptionIds || []);
+
+            const list = container.createDiv({ cls: 'options-list' });
+
+            options.forEach((opt, idx) => {
+                const isSelected = selectedSet.has(opt.id);
+                const letter = String.fromCharCode(65 + idx); // A, B, C, D, E
+
+                const card = list.createDiv({
+                    cls: `option-choice-card ${isSelected ? 'is-selected' : ''}`
+                });
+
+                const checkIndicator = card.createDiv({
+                    cls: `choice-indicator ${isSingle ? 'is-radio' : 'is-checkbox'} ${isSelected ? 'checked' : ''}`
+                });
+
+                if (isSelected && !isSingle) {
+                    setIcon(checkIndicator, 'check');
+                }
+
+                card.createSpan({ cls: 'choice-letter-label', text: `${letter}.` });
+                card.createDiv({ cls: 'choice-text', text: opt.text });
+
+                card.addEventListener('click', () => {
+                    if (isSingle) {
+                        this.session!.selectSingleOption(q.id, opt.id);
+                    } else {
+                        this.session!.toggleOption(q.id, opt.id);
+                    }
+                    this.plugin.soundManager.playClickSound();
+                    this.renderQuestionOptions(q);
+                    this.updateMatrix();
+                    this.updateTilesStrip();
+                    this.updateProgressBar();
+                });
+            });
+        } else if (q.type === 'freetext') {
+            const freetextDiv = container.createDiv({ cls: 'freetext-input-container' });
+            freetextDiv.createEl('label', { text: 'Deine Ausarbeitung / Antwort:' });
+
+            const textarea = freetextDiv.createEl('textarea', {
+                cls: 'freetext-textarea',
+                attr: { placeholder: 'Antwort hier formulieren...', rows: '6' }
+            });
+            textarea.value = answerRecord.freetextAnswer || '';
+
+            textarea.addEventListener('input', () => {
+                this.session!.setFreetextAnswer(q.id, textarea.value);
+                this.updateMatrix();
+                this.updateTilesStrip();
+                this.updateProgressBar();
+            });
+        }
+    }
+
+    private renderFooterNavigation(container: HTMLElement): void {
+        const footer = container.createDiv({ cls: 'exam-runner-footer-nav' });
+        this.updateFooterNavButtons(footer);
+    }
+
+    private updateFooterNavButtons(footerEl?: HTMLElement): void {
+        const footer = footerEl || (this.containerEl.querySelector('.exam-runner-footer-nav') as HTMLElement);
+        if (!footer || !this.session) return;
+        footer.empty();
+
+        const currentIdx = this.session.getCurrentIndex();
+        const total = this.session.getTotalQuestions();
+        const isLastQuestion = currentIdx === total - 1;
+
+        const prevBtn = footer.createEl('button', {
+            cls: `nav-btn prev-btn ${currentIdx === 0 ? 'is-disabled' : ''}`,
+            text: '← Vorherige (K)'
+        });
+        prevBtn.addEventListener('click', () => {
+            this.session?.prevQuestion();
+        });
+
+        const isFlagged = this.session.isFlagged(this.session.getCurrentQuestion().id);
+        const markBtn = footer.createEl('button', {
+            cls: `nav-btn mark-btn ${isFlagged ? 'is-flagged' : ''}`,
+            text: isFlagged ? '⚑ Markiert (M)' : '⚐ Zur Überprüfung (M)'
+        });
+        markBtn.addEventListener('click', () => {
+            if (this.session) {
+                const q = this.session.getCurrentQuestion();
+                this.session.toggleFlag(q.id);
+                this.updateFlagButton();
+                this.updateTilesStrip();
+                this.updateMatrix();
+                this.updateFooterNavButtons(footer);
+            }
+        });
+
+        if (isLastQuestion) {
+            const submitBtn = footer.createEl('button', {
+                cls: 'mod-cta nav-btn submit-btn is-final-submit',
+                text: 'Klausur abgeben ✓'
+            });
+            submitBtn.addEventListener('click', () => {
+                this.confirmAndSubmit();
+            });
+        } else {
+            const nextBtn = footer.createEl('button', {
+                cls: 'mod-cta nav-btn next-btn',
+                text: 'Nächste (J) →'
+            });
+            nextBtn.addEventListener('click', () => {
+                this.session?.nextQuestion();
+            });
+        }
+    }
+
+    private updateTimerDisplay(): void {
+        const timerEl = this.containerEl.querySelector('#exam-runner-timer .timer-text');
+        if (timerEl && this.session) {
+            const remaining = this.session.getRemainingSeconds();
+            timerEl.setText(this.formatTime(remaining));
+            const timerContainer = this.containerEl.querySelector('#exam-runner-timer');
+            if (timerContainer) {
+                // Warning state if less than 5 minutes (300 seconds)
+                timerContainer.classList.toggle('is-danger', remaining <= 300);
+            }
+        }
+    }
+
+    private updateHeaderProgress(): void {
+        const textEl = this.containerEl.querySelector('#runner-progress-info') as HTMLElement;
+        if (textEl) {
+            this.updateHeaderProgressText(textEl);
+        }
+        this.updateProgressBar();
+    }
+
+    private updateHeaderProgressText(el: HTMLElement): void {
+        if (!this.session) return;
+        const current = this.session.getCurrentIndex() + 1;
+        const total = this.session.getTotalQuestions();
+        const answered = this.session.getAnsweredCount();
+        el.setText(`Frage ${current} von ${total} • ${answered} beantwortet`);
+    }
+
+    private updateProgressBar(): void {
+        const fill = this.containerEl.querySelector('#runner-progress-fill') as HTMLElement;
+        if (fill && this.session) {
+            const answered = this.session.getAnsweredCount();
+            const total = this.session.getTotalQuestions();
+            const pct = total > 0 ? (answered / total) * 100 : 0;
+            fill.style.width = `${pct}%`;
+        }
+    }
+
+    private updateFlagButton(): void {
+        const btn = this.containerEl.querySelector('#runner-flag-btn') as HTMLElement;
+        if (btn && this.session) {
+            const currentQ = this.session.getCurrentQuestion();
+            const isFlagged = this.session.isFlagged(currentQ.id);
+            btn.classList.toggle('is-flagged', isFlagged);
+        }
+    }
+
+    private updateMatrix(): void {
+        const grid = this.containerEl.querySelector('#matrix-grid-container') as HTMLElement;
+        if (grid) {
+            this.populateMatrixGrid(grid);
+        }
+    }
+
+    private scrollToTop(): void {
+        const body = this.containerEl.querySelector('.exam-runner-question-area');
+        if (body) {
+            body.scrollTop = 0;
+        }
+    }
+
+    private formatTime(totalSeconds: number): string {
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+
+    private handleTimeExpired(): void {
+        new Modal(this.app)
+            .setTitle('Zeit abgelaufen!')
+            .setContent('Die Bearbeitungszeit für diese Klausur ist abgelaufen. Die Klausur wird nun ausgewertet.')
+            .open();
+        this.submitExam();
+    }
+
+    private confirmAndSubmit(): void {
+        if (!this.session) return;
+
+        const unanswered = this.session.getTotalQuestions() - this.session.getAnsweredCount();
+        const flagged = this.session.getState().flaggedQuestionIds.length;
+
+        const modal = new Modal(this.app);
+        modal.titleEl.setText('Klausur abgeben?');
+
+        let msg = 'Möchtest du die Klausur jetzt abschließen und auswerten?';
+        if (unanswered > 0 || flagged > 0) {
+            msg += `\n\nHinweis: Es sind noch ${unanswered} unbeantwortete Frage(n) und ${flagged} markierte Frage(n) vorhanden.`;
+        }
+        modal.contentEl.createEl('p', { text: msg });
+
+        const btnRow = modal.contentEl.createDiv({ cls: 'modal-button-row' });
+        const cancelBtn = btnRow.createEl('button', { text: 'Weiterbearbeiten' });
+        cancelBtn.addEventListener('click', () => modal.close());
+
+        const confirmBtn = btnRow.createEl('button', { cls: 'mod-cta', text: 'Ja, abgeben' });
+        confirmBtn.addEventListener('click', () => {
+            modal.close();
+            this.submitExam();
+        });
+
+        modal.open();
+    }
+
+    private confirmExit(): void {
+        const modal = new Modal(this.app);
+        modal.titleEl.setText('Klausur verlassen?');
+        modal.contentEl.createEl('p', {
+            text: 'Deine bisherigen Antworten und die verbleibende Zeit sind zwischengespeichert. Du kannst die Klausur später über das Dashboard oder den Wiederherstellungsdialog fortsetzen.'
+        });
+
+        const btnRow = modal.contentEl.createDiv({ cls: 'modal-button-row' });
+        const cancelBtn = btnRow.createEl('button', { text: 'Weiterbearbeiten' });
+        cancelBtn.addEventListener('click', () => modal.close());
+
+        const exitBtn = btnRow.createEl('button', { cls: 'mod-warning', text: 'Zum Dashboard' });
+        exitBtn.addEventListener('click', async () => {
+            modal.close();
+            if (this.session) {
+                await this.session.triggerAutoSave();
+            }
+            this.plugin.openDashboard(this.leaf);
+        });
+
+        modal.open();
+    }
+
+    private async submitExam(): Promise<void> {
+        if (!this.session) return;
+        const state = this.session.getState();
+        this.session.destroy();
+        this.session = null;
+        await this.plugin.completeExam(state);
+    }
+}

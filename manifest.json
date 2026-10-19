@@ -1,0 +1,9 @@
+{
+  "id": "exam-quiz-hub",
+  "name": "Exam & Quiz Hub",
+  "version": "1.0.0",
+  "minAppVersion": "1.5.0",
+  "description": "High-performance offline exam simulation, quiz hub and spaced repetition with 5-item MC scoring, crash recovery and intelligent error pool.",
+  "author": "D1pl3xx",
+  "isDesktopOnly": false
+}
