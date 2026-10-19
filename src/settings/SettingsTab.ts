@@ -103,7 +103,7 @@ export class SettingsTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        new Setting(containerEl).setName('Exam and Quiz Hub — Einstellungen').setHeading();
+        new Setting(containerEl).setName('Allgemeine Einstellungen').setHeading();
 
         new Setting(containerEl)
             .setName('Klausuren-Ordner')
@@ -186,32 +186,32 @@ export class SettingsTab extends PluginSettingTab {
         new Setting(containerEl)
             .setName('Fehlerspeicher zurücksetzen')
             .setDesc(`Aktuell befinden sich ${errorCount} Frage(n) im Fehlerspeicher.`)
-            .addButton(btn => btn
-                .setButtonText('Fehlerspeicher leeren')
-                .setDestructive()
-                .onClick(async () => {
+            .addButton(btn => {
+                btn.setButtonText('Fehlerspeicher leeren');
+                btn.setClass('mod-warning');
+                btn.onClick(() => {
                     this.plugin.settings.errorPool = {};
-                    await this.plugin.saveSettings();
+                    void this.plugin.saveSettings();
                     this.renderSettings();
-                })
-            );
+                });
+            });
 
         new Setting(containerEl)
             .setName('Fortschritt & Statistiken zurücksetzen')
             .setDesc(`Level ${this.plugin.settings.userLevel} (${this.plugin.settings.userXP} XP), Streak: ${this.plugin.settings.streakDays} Tage.`)
-            .addButton(btn => btn
-                .setButtonText('Statistiken zurücksetzen')
-                .setDestructive()
-                .onClick(async () => {
+            .addButton(btn => {
+                btn.setButtonText('Statistiken zurücksetzen');
+                btn.setClass('mod-warning');
+                btn.onClick(() => {
                     this.plugin.settings.userXP = 0;
                     this.plugin.settings.userLevel = 1;
                     this.plugin.settings.streakDays = 0;
                     this.plugin.settings.lastActiveDate = '';
                     this.plugin.settings.fsrsData = {};
-                    await this.plugin.saveSettings();
+                    void this.plugin.saveSettings();
                     this.renderSettings();
-                })
-            );
+                });
+            });
 
         // --- AI CONVERTER & MARKDOWN FORMAT SECTION ---
         this.displayAIConverterSection(containerEl);
@@ -233,12 +233,12 @@ export class SettingsTab extends PluginSettingTab {
                 .setButtonText('📋 Prompt kopieren')
                 .setCta()
                 .onClick(() => {
-                    void (async () => {
-                        await this.copyTextToClipboard(AI_CONVERTER_PROMPT);
-                        new Notice('✅ KI-Prompt erfolgreich in die Zwischenablage kopiert!');
-                        btn.setButtonText('✅ Kopiert!');
-                        window.setTimeout(() => btn.setButtonText('📋 Prompt kopieren'), 2500);
-                    })();
+                    this.copyTextToClipboard(AI_CONVERTER_PROMPT);
+                    new Notice('✅ KI-Prompt erfolgreich in die Zwischenablage kopiert!');
+                    btn.setButtonText('✅ Kopiert!');
+                    window.setTimeout(() => {
+                        btn.setButtonText('📋 Prompt kopieren');
+                    }, 2500);
                 })
             );
 
@@ -256,12 +256,12 @@ export class SettingsTab extends PluginSettingTab {
             .addButton(btn => btn
                 .setButtonText('📄 Beispiel kopieren')
                 .onClick(() => {
-                    void (async () => {
-                        await this.copyTextToClipboard(SAMPLE_MARKDOWN_CODE);
-                        new Notice('✅ Markdown-Beispiel in die Zwischenablage kopiert!');
-                        btn.setButtonText('✅ Kopiert!');
-                        window.setTimeout(() => btn.setButtonText('📄 Beispiel kopieren'), 2500);
-                    })();
+                    this.copyTextToClipboard(SAMPLE_MARKDOWN_CODE);
+                    new Notice('✅ Markdown-Beispiel in die Zwischenablage kopiert!');
+                    btn.setButtonText('✅ Kopiert!');
+                    window.setTimeout(() => {
+                        btn.setButtonText('📄 Beispiel kopieren');
+                    }, 2500);
                 })
             );
 
@@ -273,9 +273,9 @@ export class SettingsTab extends PluginSettingTab {
         sampleArea.value = SAMPLE_MARKDOWN_CODE;
     }
 
-    private async copyTextToClipboard(text: string): Promise<void> {
+    private copyTextToClipboard(text: string): void {
         if (typeof navigator !== 'undefined' && navigator.clipboard) {
-            await navigator.clipboard.writeText(text);
+            void navigator.clipboard.writeText(text);
         }
     }
 }
