@@ -1,4 +1,4 @@
-# Obsidian Exam & Quiz Hub
+# Exam and Quiz Hub
 
 Ein hochperformantes, vollständig offline- und mobile-taugliches Obsidian Community Plugin zur **Klausursimulation, Wissensüberprüfung und Spaced-Repetition-Wiederholung**.
 
@@ -82,8 +82,8 @@ Entwickelt gemäß **Projekt-Spezifikation v3** und strikt nach den **Mobile & D
    - Gehe zu **Einstellungen** (`Strg + ,`) > **Community-Plugins**.
    - Deaktiviere den eingeschränkten Modus („Restricted Mode“ ausschalten).
    - Klicke bei den installierten Plugins auf das Aktualisieren-Icon 🔄.
-   - Aktiviere den Schalter bei **Exam & Quiz Hub**.
-   - Klicke auf das neue Doktorhut-Icon in der linken Leiste oder drücke `Strg + P` > *„Exam & Quiz Hub: Klausur-Dashboard öffnen“*.
+   - Aktiviere den Schalter bei **Exam and Quiz Hub**.
+   - Klicke auf das neue Doktorhut-Icon in der linken Leiste oder drücke `Strg + P` > *„Exam and Quiz Hub: Klausur-Dashboard öffnen“*.
 
 ---
 

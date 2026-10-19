@@ -51,7 +51,7 @@ export class DashboardView extends ItemView {
         const titleRow = header.createDiv({ cls: 'exam-hub-title-row' });
         const iconSpan = titleRow.createSpan({ cls: 'exam-hub-title-icon' });
         setIcon(iconSpan, 'graduation-cap');
-        titleRow.createEl('h1', { text: 'Exam & Quiz Hub' });
+        titleRow.createEl('h1', { text: 'Exam and Quiz Hub' });
     }
 
     private renderGamificationBar(container: HTMLElement): void {

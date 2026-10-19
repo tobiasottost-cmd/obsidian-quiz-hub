@@ -48,7 +48,7 @@ export default class ExamQuizHubPlugin extends Plugin {
         );
 
         // Ribbon icon in left sidebar
-        this.addRibbonIcon('graduation-cap', 'Exam & Quiz Hub', () => {
+        this.addRibbonIcon('graduation-cap', 'Exam and Quiz Hub', () => {
             this.openDashboard();
         });
 

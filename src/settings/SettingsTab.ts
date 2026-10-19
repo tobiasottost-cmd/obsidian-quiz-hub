@@ -2,7 +2,7 @@ import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
 import type ExamQuizHubPlugin from '../main';
 
 const AI_CONVERTER_PROMPT = `Du bist ein Experte für didaktische Prüfungserstellung und Markdown-Formatierung.
-Wandle die folgenden Lerninhalte, Altfragen oder Prüfungsfragen in das exakte Format für das Obsidian Plugin "Exam & Quiz Hub" um.
+Wandle die folgenden Lerninhalte, Altfragen oder Prüfungsfragen in das exakte Format für das Obsidian Plugin "Exam and Quiz Hub" um.
 
 WICHTIGE REGELN & SYNTAX:
 1. Dateikopf (YAML Frontmatter) ganz oben:
@@ -99,7 +99,7 @@ export class SettingsTab extends PluginSettingTab {
         const { containerEl } = this;
         containerEl.empty();
 
-        containerEl.createEl('h2', { text: 'Exam & Quiz Hub — Einstellungen' });
+        containerEl.createEl('h2', { text: 'Exam and Quiz Hub — Einstellungen' });
 
         new Setting(containerEl)
             .setName('Klausuren-Ordner')
