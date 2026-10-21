@@ -78,6 +78,36 @@ assert(q2.type === 'freetext', 'Question 2 is freetext');
 assert(q2.modelAnswer?.includes('aversiven Spannungszustand') === true, 'Question 2 model answer extracted');
 assert(q2.rubric?.length === 3, 'Question 2 rubric has 3 criteria');
 
+// Test Frontmatter priority over stale cache
+const staleCache = { timeLimitMinutes: 45, passingScore: '60%' };
+const freshMarkdown = `---
+title: Aktualisierte Klausur
+zeitlimit: 90
+bestehensgrenze: 75%
+---
+## Testfrage ^q-fresh-01
+type: single-choice
+- [x] Richtig
+- [ ] Falsch
+`;
+const freshParsed = ExamParser.parse(freshMarkdown, 'exams/test.md', staleCache);
+assert(freshParsed.frontmatter.timeLimitMinutes === 90, 'Live file timeLimitMinutes (90) overrides stale cache (45) immediately');
+assert(freshParsed.frontmatter.passingScore === '75%', 'Live file passingScore (75%) overrides stale cache');
+
+// Test Default 90 min when timeLimitMinutes is omitted
+const noTimeMarkdown = `---
+title: Klausur ohne Zeitlimit
+---
+## Frage 1 ^q-notime-01
+type: single-choice
+- [x] Ja
+`;
+const noTimeParsed = ExamParser.parse(noTimeMarkdown, 'exams/notime.md');
+const sessionFromNoTime = ExamGenerator.fromParsedExam(noTimeParsed);
+assert(sessionFromNoTime.timeLimitSeconds === 90 * 60, 'Default exam time limit is 90 minutes (5400s) when omitted in YAML');
+
+assert(DEFAULT_SETTINGS.defaultPassingScore === 75, 'Default passing score in settings is 75%');
+
 console.log('\n--- Testing ScoringEngine (5-Item MC Logic) ---');
 
 const sessionState: ActiveSessionState = {

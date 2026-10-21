@@ -295,9 +295,10 @@ export class DashboardView extends ItemView {
 
                 const metaRow = examCard.createDiv({ cls: 'exam-item-meta' });
                 metaRow.createSpan({ text: `📝 ${exam.questions.length} Fragen` });
-                const time = exam.frontmatter.timeLimitMinutes || Math.round(exam.questions.length * 1.5);
+                const time = exam.frontmatter.timeLimitMinutes ?? 90;
                 metaRow.createSpan({ text: `⏱️ ${time} Min.` });
-                metaRow.createSpan({ text: `🎯 Bestehen: ${exam.frontmatter.passingScore || '60%'}` });
+                const pass = exam.frontmatter.passingScore || `${this.plugin.settings.defaultPassingScore}%`;
+                metaRow.createSpan({ text: `🎯 Bestehen: ${pass}` });
 
                 const startBtn = examCard.createEl('button', {
                     cls: 'mod-cta exam-start-btn',

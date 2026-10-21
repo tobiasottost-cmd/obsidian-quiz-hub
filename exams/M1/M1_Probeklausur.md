@@ -3,8 +3,8 @@ type: exam
 module: M1
 semester: WiSe26/27
 title: Probeklausur Grundlagen der Psychologie
-timeLimitMinutes: 45
-passingScore: 60%
+timeLimitMinutes: 90
+passingScore: 75%
 shuffleQuestions: true
 shuffleOptions: true
 tags:

@@ -1,4 +1,4 @@
-import { Component, ItemView, Modal, setIcon, WorkspaceLeaf } from 'obsidian';
+import { Component, ItemView, Modal, Platform, setIcon, WorkspaceLeaf } from 'obsidian';
 import type ExamQuizHubPlugin from '../main';
 import { ExamSession } from '../session/ExamSession';
 import { MarkdownUtils } from '../parser/MarkdownUtils';
@@ -145,7 +145,7 @@ export class ExamRunnerView extends ItemView {
     private render(): void {
         const container = this.contentEl;
         container.empty();
-        container.className = 'exam-runner-container';
+        container.addClass('exam-runner-container');
         if (this.isFocusMode) {
             container.addClass('is-focus-mode');
         }
@@ -377,9 +377,12 @@ export class ExamRunnerView extends ItemView {
         }
 
         // Prominent Flag button directly on question card
+        const cardFlagText = Platform.isMobile
+            ? (isFlagged ? '⚑ Markiert' : '⚐ Markieren')
+            : (isFlagged ? '⚑ Für Überprüfung markiert' : '⚐ Frage markieren (M)');
         const cardFlagBtn = metaRow.createEl('button', {
             cls: `question-card-flag-btn ${isFlagged ? 'is-flagged' : ''}`,
-            text: isFlagged ? '⚑ Für Überprüfung markiert' : '⚐ Frage markieren (M)',
+            text: cardFlagText,
             attr: { title: 'Markierung für Review umschalten (M)' }
         });
         cardFlagBtn.addEventListener('click', () => {
@@ -390,7 +393,10 @@ export class ExamRunnerView extends ItemView {
             this.updateFooterNavButtons();
             const nowFlagged = this.session!.isFlagged(currentQ.id);
             cardFlagBtn.classList.toggle('is-flagged', nowFlagged);
-            cardFlagBtn.setText(nowFlagged ? '⚑ Für Überprüfung markiert' : '⚐ Frage markieren (M)');
+            const nowText = Platform.isMobile
+                ? (nowFlagged ? '⚑ Markiert' : '⚐ Markieren')
+                : (nowFlagged ? '⚑ Für Überprüfung markiert' : '⚐ Frage markieren (M)');
+            cardFlagBtn.setText(nowText);
         });
 
         // Markdown rendered prompt
@@ -489,18 +495,22 @@ export class ExamRunnerView extends ItemView {
         const total = this.session.getTotalQuestions();
         const isLastQuestion = currentIdx === total - 1;
 
+        const prevText = Platform.isMobile ? '← Zurück' : '← Vorherige (K)';
         const prevBtn = footer.createEl('button', {
             cls: `nav-btn prev-btn ${currentIdx === 0 ? 'is-disabled' : ''}`,
-            text: '← Vorherige (K)'
+            text: prevText
         });
         prevBtn.addEventListener('click', () => {
             this.session?.prevQuestion();
         });
 
         const isFlagged = this.session.isFlagged(this.session.getCurrentQuestion().id);
+        const markText = Platform.isMobile
+            ? (isFlagged ? '⚑ Markiert' : '⚐ Markieren')
+            : (isFlagged ? '⚑ Markiert (M)' : '⚐ Zur Überprüfung (M)');
         const markBtn = footer.createEl('button', {
             cls: `nav-btn mark-btn ${isFlagged ? 'is-flagged' : ''}`,
-            text: isFlagged ? '⚑ Markiert (M)' : '⚐ Zur Überprüfung (M)'
+            text: markText
         });
         markBtn.addEventListener('click', () => {
             if (this.session) {
@@ -514,17 +524,19 @@ export class ExamRunnerView extends ItemView {
         });
 
         if (isLastQuestion) {
+            const submitText = Platform.isMobile ? 'Abgeben ✓' : 'Klausur abgeben ✓';
             const submitBtn = footer.createEl('button', {
                 cls: 'mod-cta nav-btn submit-btn is-final-submit',
-                text: 'Klausur abgeben ✓'
+                text: submitText
             });
             submitBtn.addEventListener('click', () => {
                 this.confirmAndSubmit();
             });
         } else {
+            const nextText = Platform.isMobile ? 'Weiter →' : 'Nächste (J) →';
             const nextBtn = footer.createEl('button', {
                 cls: 'mod-cta nav-btn next-btn',
-                text: 'Nächste (J) →'
+                text: nextText
             });
             nextBtn.addEventListener('click', () => {
                 this.session?.nextQuestion();

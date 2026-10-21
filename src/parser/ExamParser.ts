@@ -40,20 +40,17 @@ export class ExamParser {
 
         let body = content;
 
+        let parsedYaml: Partial<ExamFrontmatter> = {};
         if (content.startsWith('---')) {
             const secondDashesIndex = content.indexOf('\n---', 3);
             if (secondDashesIndex !== -1) {
                 const yamlBlock = content.substring(3, secondDashesIndex).trim();
                 body = content.substring(secondDashesIndex + 4).trim();
-                const parsedYaml = this.parseSimpleYaml(yamlBlock);
-                frontmatter = {
-                    ...frontmatter,
-                    ...parsedYaml
-                };
+                parsedYaml = this.parseSimpleYaml(yamlBlock);
             }
         }
 
-        // If Obsidian passed cached frontmatter, merge with precedence
+        // Merge Obsidian cached frontmatter as baseline if available
         if (cached && typeof cached === 'object') {
             frontmatter = {
                 ...frontmatter,
@@ -69,11 +66,17 @@ export class ExamParser {
             };
         }
 
+        // Live file content takes highest precedence so edits take effect immediately
+        frontmatter = {
+            ...frontmatter,
+            ...parsedYaml
+        };
+
         return { frontmatter, body };
     }
 
     /**
-     * Lightweight key-value YAML parser for basic frontmatter.
+     * Lightweight key-value YAML parser for basic frontmatter with alias support.
      */
     private static parseSimpleYaml(yamlStr: string): Partial<ExamFrontmatter> {
         const result: Partial<ExamFrontmatter> = {};
@@ -100,29 +103,47 @@ export class ExamParser {
                 value = value.substring(1, value.length - 1);
             }
 
-            switch (key) {
+            const lowerKey = key.toLowerCase().replace(/[-_]/g, '');
+            switch (lowerKey) {
                 case 'type':
                     result.type = value === 'quiz' ? 'quiz' : 'exam';
                     break;
                 case 'module':
+                case 'modul':
+                case 'fach':
                     result.module = value;
                     break;
                 case 'semester':
                     result.semester = value;
                     break;
                 case 'title':
+                case 'titel':
+                case 'name':
                     result.title = value;
                     break;
-                case 'timeLimitMinutes':
+                case 'timelimitminutes':
+                case 'timelimit':
+                case 'time':
+                case 'zeitlimit':
+                case 'dauer':
+                case 'zeit':
                     result.timeLimitMinutes = Number(value) || undefined;
                     break;
-                case 'passingScore':
+                case 'passingscore':
+                case 'bestehensgrenze':
+                case 'bestehen':
+                case 'passing':
+                case 'score':
                     result.passingScore = value;
                     break;
-                case 'shuffleQuestions':
+                case 'shufflequestions':
+                case 'mischen':
+                case 'fragenmischen':
                     result.shuffleQuestions = value === 'true';
                     break;
-                case 'shuffleOptions':
+                case 'shuffleoptions':
+                case 'optionenmischen':
+                case 'antwortenmischen':
                     result.shuffleOptions = value === 'true';
                     break;
             }

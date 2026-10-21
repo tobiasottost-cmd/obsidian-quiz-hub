@@ -325,8 +325,24 @@
 }
 
 /* ==========================================================================
-   Exam Runner View Styles
+   Exam Runner View Styles & Obsidian Header Integration
    ========================================================================== */
+/* Hide Obsidian's native view-header on Runner and Result views to avoid double header overlap */
+.workspace-leaf-content[data-type="exam-quiz-hub-runner"] .view-header,
+.workspace-leaf-content[data-type="exam-quiz-hub-result"] .view-header {
+    display: none !important;
+}
+
+.workspace-leaf-content[data-type="exam-quiz-hub-runner"] .view-content,
+.workspace-leaf-content[data-type="exam-quiz-hub-result"] .view-content {
+    height: 100% !important;
+    padding: 0 !important;
+}
+
+.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] .view-header {
+    position: relative !important;
+}
+
 .exam-runner-container {
     display: flex;
     flex-direction: column;
@@ -343,6 +359,14 @@
     background-color: var(--background-secondary);
     border-bottom: 1px solid var(--background-modifier-border);
     padding: 10px 16px;
+}
+
+/* Safe-area insets for mobile & notch support */
+.is-mobile .exam-runner-sticky-header,
+.is-phone .exam-runner-sticky-header {
+    padding-top: calc(10px + max(var(--safe-area-inset-top, 0px), env(safe-area-inset-top, 0px)));
+    padding-left: calc(12px + max(var(--safe-area-inset-left, 0px), env(safe-area-inset-left, 0px)));
+    padding-right: calc(12px + max(var(--safe-area-inset-right, 0px), env(safe-area-inset-right, 0px)));
 }
 
 .exam-runner-sticky-header .runner-header-top-row {
@@ -773,6 +797,18 @@
     padding: 12px 24px;
     background-color: var(--background-secondary);
     border-top: 1px solid var(--background-modifier-border);
+    flex-shrink: 0;
+}
+
+/* Clear Obsidian mobile navbar so footer navigation is never covered */
+.is-mobile .exam-runner-footer-nav,
+.is-phone .exam-runner-footer-nav {
+    padding-top: 10px;
+    padding-left: calc(12px + max(var(--safe-area-inset-left, 0px), env(safe-area-inset-left, 0px)));
+    padding-right: calc(12px + max(var(--safe-area-inset-right, 0px), env(safe-area-inset-right, 0px)));
+    padding-bottom: calc(12px + var(--navbar-height, 48px) + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
+    gap: 8px;
+    box-sizing: border-box;
 }
 
 .exam-runner-footer-nav .nav-btn {
@@ -1206,27 +1242,69 @@
 }
 
 /* ==========================================================================
-   Mobile & Responsive Adjustments
+   Mobile & Responsive Adjustments (Phones & Tablets)
    ========================================================================== */
+
+/* Dashboard and Result views safe-area and navbar clearance on mobile */
+.is-mobile .exam-hub-dashboard-container,
+.is-phone .exam-hub-dashboard-container {
+    padding-top: calc(16px + max(var(--safe-area-inset-top, 0px), env(safe-area-inset-top, 0px)));
+    padding-bottom: calc(24px + var(--navbar-height, 48px) + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
+    padding-left: calc(14px + max(var(--safe-area-inset-left, 0px), env(safe-area-inset-left, 0px)));
+    padding-right: calc(14px + max(var(--safe-area-inset-right, 0px), env(safe-area-inset-right, 0px)));
+}
+
+.is-mobile .exam-result-container,
+.is-phone .exam-result-container {
+    padding-top: calc(16px + max(var(--safe-area-inset-top, 0px), env(safe-area-inset-top, 0px)));
+    padding-bottom: calc(30px + var(--navbar-height, 48px) + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
+    padding-left: calc(14px + max(var(--safe-area-inset-left, 0px), env(safe-area-inset-left, 0px)));
+    padding-right: calc(14px + max(var(--safe-area-inset-right, 0px), env(safe-area-inset-right, 0px)));
+}
+
+.is-mobile .exam-result-inner,
+.is-phone .exam-result-inner {
+    padding-bottom: calc(40px + var(--navbar-height, 48px) + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
+}
+
 @media screen and (max-width: 768px) {
     .exam-runner-sticky-header {
-        padding: 8px 12px;
+        padding-top: calc(10px + max(var(--safe-area-inset-top, 0px), env(safe-area-inset-top, 0px)));
+        padding-left: calc(12px + max(var(--safe-area-inset-left, 0px), env(safe-area-inset-left, 0px)));
+        padding-right: calc(12px + max(var(--safe-area-inset-right, 0px), env(safe-area-inset-right, 0px)));
+        padding-bottom: 8px;
     }
 
-    .exam-title-text {
-        font-size: 0.9rem;
-        max-width: 140px;
+    .exam-runner-footer-nav {
+        padding-top: 10px;
+        padding-left: calc(10px + max(var(--safe-area-inset-left, 0px), env(safe-area-inset-left, 0px)));
+        padding-right: calc(10px + max(var(--safe-area-inset-right, 0px), env(safe-area-inset-right, 0px)));
+        padding-bottom: calc(12px + var(--navbar-height, 48px) + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
+        gap: 8px;
+        box-sizing: border-box;
+    }
+
+    .exam-runner-footer-nav .nav-btn {
+        flex: 1 1 0;
+        min-width: 0;
+        min-height: 44px;
+        padding: 8px 6px;
+        font-size: 0.84rem;
         white-space: nowrap;
-        overflow: hidden;
         text-overflow: ellipsis;
+        overflow: hidden;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
     }
 
     .exam-runner-question-area {
-        padding: 14px;
+        padding: 14px 10px;
     }
 
     .question-content-card {
-        padding: 16px;
+        padding: 16px 12px;
     }
 
     .exam-matrix-drawer {
@@ -1236,6 +1314,139 @@
         bottom: 0;
         width: 100%;
         max-width: 300px;
-        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+        z-index: 20;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.25);
+    }
+}
+
+/* Smartphone portrait & narrow screens (<= 640px) */
+@media screen and (max-width: 640px) {
+    .exam-runner-sticky-header .runner-header-top-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px 6px;
+        margin-bottom: 6px;
+    }
+
+    .exam-runner-sticky-header .header-left-group {
+        flex: 1 1 auto;
+        min-width: 0;
+        max-width: calc(100% - 95px);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .exam-runner-sticky-header .header-left-group .runner-back-btn {
+        min-width: 38px;
+        min-height: 38px;
+        padding: 6px;
+        flex-shrink: 0;
+    }
+
+    .exam-runner-sticky-header .header-exam-titles {
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .exam-runner-sticky-header .exam-title-text {
+        font-size: 0.88rem;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: block;
+    }
+
+    .exam-runner-sticky-header .exam-module-badge {
+        font-size: 0.72rem;
+    }
+
+    .exam-runner-sticky-header .runner-timer-container {
+        flex: 0 0 auto;
+        margin-left: auto;
+        padding: 4px 10px;
+        font-size: 0.95rem;
+        gap: 5px;
+    }
+
+    .exam-runner-sticky-header .header-right-group {
+        flex: 1 1 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 2px;
+    }
+
+    .exam-runner-sticky-header .header-right-group .icon-btn {
+        min-width: 38px;
+        min-height: 38px;
+        padding: 6px;
+    }
+
+    .exam-runner-sticky-header .header-right-group .focus-toggle-btn {
+        display: none; /* Focus mode toggle is redundant on mobile phone screens */
+    }
+
+    .exam-runner-sticky-header .runner-submit-btn {
+        min-height: 38px;
+        padding: 6px 14px;
+        font-size: 0.84rem;
+        font-weight: 600;
+    }
+
+    .runner-question-tiles-strip {
+        gap: 6px;
+        padding: 4px 0 2px 0;
+    }
+
+    .runner-tile-item {
+        min-width: 38px;
+        min-height: 38px;
+        font-size: 0.82rem;
+        flex-shrink: 0;
+    }
+
+    .question-meta-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .question-meta-row .question-card-flag-btn {
+        align-self: flex-start;
+        font-size: 0.82rem;
+        padding: 6px 10px;
+    }
+
+    .option-choice-card {
+        padding: 12px 10px;
+        gap: 10px;
+    }
+
+    /* Dashboard mobile optimizations */
+    .exam-hub-dashboard-header .exam-hub-title-row h1 {
+        font-size: 1.4rem;
+    }
+
+    .exam-hub-stats-bar {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .module-exams-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .result-actions-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .result-actions-row .result-action-btn {
+        width: 100%;
     }
 }

@@ -62,8 +62,7 @@ export class ExamGenerator {
             questions = this.shuffle(questions);
         }
 
-        const questionCount = questions.length;
-        const timeLimitMinutes = exam.frontmatter.timeLimitMinutes || Math.max(5, Math.round(questionCount * 1.5));
+        const timeLimitMinutes = exam.frontmatter.timeLimitMinutes ?? 90;
         const timeLimitSeconds = timeLimitMinutes * 60;
 
         return {

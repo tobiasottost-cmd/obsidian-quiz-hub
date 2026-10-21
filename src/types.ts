@@ -135,7 +135,7 @@ export interface PluginSettingsData {
 export const DEFAULT_SETTINGS: PluginSettingsData = {
     examsFolderPath: 'exams',
     resultsFolderPath: 'exams/results',
-    defaultPassingScore: 60,
+    defaultPassingScore: 75,
     enableSoundEffects: true,
     enableConfetti: true,
     soundVolume: 0.5,

@@ -5,7 +5,7 @@ export class ScoringEngine {
      * Evaluates a completed or submitted active exam session.
      * Implements strict 5-item MC logic and XP allocation per specification v3.
      */
-    public static evaluate(sessionState: ActiveSessionState, defaultPassingPercentage: number = 60): SessionResult {
+    public static evaluate(sessionState: ActiveSessionState, defaultPassingPercentage: number = 75): SessionResult {
         const evaluations: QuestionEvaluation[] = [];
         let totalPossible = 0;
         let totalEarned = 0;

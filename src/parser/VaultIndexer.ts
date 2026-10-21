@@ -7,6 +7,7 @@ export class VaultIndexer {
     private examsFolderPath: string;
     private cache: Map<string, ParsedExamFile> = new Map();
     private eventRefs: EventRef[] = [];
+    private metadataEventRefs: EventRef[] = [];
     private onIndexUpdatedCallbacks: (() => void)[] = [];
 
     constructor(app: App, examsFolderPath: string) {
@@ -83,6 +84,15 @@ export class VaultIndexer {
                     await this.indexFile(file);
                 }
                 this.notifyIndexUpdated();
+            })
+        );
+
+        this.metadataEventRefs.push(
+            this.app.metadataCache.on('changed', async (file: TFile) => {
+                if (this.isExamFile(file)) {
+                    await this.indexFile(file);
+                    this.notifyIndexUpdated();
+                }
             })
         );
     }
@@ -242,6 +252,10 @@ export class VaultIndexer {
             this.app.vault.offref(ref);
         }
         this.eventRefs = [];
+        for (const ref of this.metadataEventRefs) {
+            this.app.metadataCache.offref(ref);
+        }
+        this.metadataEventRefs = [];
         this.cache.clear();
         this.onIndexUpdatedCallbacks = [];
     }

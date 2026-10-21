@@ -11,8 +11,8 @@ type: exam
 module: [Modulkürzel, z.B. M1 oder Biologie]
 semester: [Optional, z.B. WiSe26/27]
 title: [Aussagekräftiger Klausurtitel]
-timeLimitMinutes: [Zeitlimit in Minuten, z.B. 45]
-passingScore: 60%
+timeLimitMinutes: [Zeitlimit in Minuten, z.B. 90]
+passingScore: 75%
 shuffleQuestions: true
 shuffleOptions: true
 ---
@@ -52,8 +52,8 @@ type: exam
 module: M1
 semester: WiSe26/27
 title: Probeklausur Konditionierung
-timeLimitMinutes: 45
-passingScore: 60%
+timeLimitMinutes: 90
+passingScore: 75%
 shuffleQuestions: true
 shuffleOptions: true
 ---
@@ -129,7 +129,7 @@ export class SettingsTab extends PluginSettingTab {
                     min: 40,
                     max: 90,
                     step: 5,
-                    defaultValue: 60,
+                    defaultValue: 75,
                     displayFormat: (val: number) => `${val}%`,
                 },
             },
@@ -420,7 +420,7 @@ export class SettingsTab extends PluginSettingTab {
             .setName('Standard-Bestehensgrenze (%)')
             .setDesc('Prozentsatz, ab dem eine Klausur als bestanden gilt (wenn nicht in Notiz definiert).')
             .addSlider(slider => slider
-                .setLimits(40, 90, 5)
+                .setLimits(40, 95, 5)
                 .setValue(this.plugin.settings.defaultPassingScore)
                 .onChange(async (value) => {
                     this.plugin.settings.defaultPassingScore = value;
