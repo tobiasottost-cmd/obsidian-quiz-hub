@@ -1,4 +1,4 @@
-import { App, Notice, PluginSettingTab, Setting } from 'obsidian';
+import { App, Notice, PluginSettingTab, Setting, SettingDefinitionItem } from 'obsidian';
 import type ExamQuizHubPlugin from '../main';
 
 const AI_CONVERTER_PROMPT = `Du bist ein Experte für didaktische Prüfungserstellung und Markdown-Formatierung.
@@ -93,6 +93,247 @@ export class SettingsTab extends PluginSettingTab {
     constructor(app: App, plugin: ExamQuizHubPlugin) {
         super(app, plugin);
         this.plugin = plugin;
+    }
+
+    public override getSettingDefinitions(): SettingDefinitionItem[] {
+        return [
+            {
+                name: 'Klausuren-Ordner',
+                desc: 'Verzeichnis im Vault, in dem Prüfungs- und Quiz-Notizen gesucht werden.',
+                aliases: ['klausuren', 'prüfungen', 'ordner', 'exams', 'folder', 'path'],
+                control: {
+                    type: 'text',
+                    key: 'examsFolderPath',
+                    placeholder: 'exams',
+                    defaultValue: 'exams',
+                },
+            },
+            {
+                name: 'Ergebnisberichte-Ordner',
+                desc: 'Verzeichnis, in dem Klausurauswertungen als Markdown-Notizen abgelegt werden.',
+                aliases: ['ergebnisse', 'berichte', 'results', 'reports', 'auswertung', 'folder'],
+                control: {
+                    type: 'text',
+                    key: 'resultsFolderPath',
+                    placeholder: 'exams/results',
+                    defaultValue: 'exams/results',
+                },
+            },
+            {
+                name: 'Standard-Bestehensgrenze (%)',
+                desc: 'Prozentsatz, ab dem eine Klausur als bestanden gilt (wenn nicht in Notiz definiert).',
+                aliases: ['bestehen', 'grenze', 'passing', 'score', 'prozent'],
+                control: {
+                    type: 'slider',
+                    key: 'defaultPassingScore',
+                    min: 40,
+                    max: 90,
+                    step: 5,
+                    defaultValue: 60,
+                    displayFormat: (val: number) => `${val}%`,
+                },
+            },
+            {
+                type: 'group',
+                heading: 'Audio & Gamification',
+                items: [
+                    {
+                        name: 'Soundeffekte aktivieren',
+                        desc: 'Synthetisierte Web-Audio-Klänge bei Bestehen, Fehler und Klicks abspielen (100% offline).',
+                        aliases: ['sound', 'audio', 'töne', 'klang', 'effekte'],
+                        control: {
+                            type: 'toggle',
+                            key: 'enableSoundEffects',
+                            defaultValue: true,
+                        },
+                    },
+                    {
+                        name: 'Sound-Lautstärke',
+                        desc: 'Lautstärke der synthetisierten Klänge anpassen.',
+                        aliases: ['volume', 'lautstärke', 'sound', 'audio'],
+                        control: {
+                            type: 'slider',
+                            key: 'soundVolume',
+                            min: 0.1,
+                            max: 1.0,
+                            step: 0.1,
+                            defaultValue: 0.5,
+                            displayFormat: (val: number) => `${Math.round(val * 100)}%`,
+                        },
+                    },
+                    {
+                        name: 'Konfetti-Animation aktivieren',
+                        desc: 'Canvas-Konfetti beim Bestehen einer Klausur anzeigen.',
+                        aliases: ['confetti', 'konfetti', 'animation', 'bestehen'],
+                        control: {
+                            type: 'toggle',
+                            key: 'enableConfetti',
+                            defaultValue: true,
+                        },
+                    },
+                ],
+            },
+            {
+                type: 'group',
+                heading: 'Daten & Speicher',
+                items: [
+                    {
+                        name: 'Fehlerspeicher zurücksetzen',
+                        desc: `Aktuell befinden sich ${Object.keys(this.plugin.settings.errorPool).length} Frage(n) im Fehlerspeicher.`,
+                        aliases: ['fehlerspeicher', 'error pool', 'fehler', 'leeren', 'reset'],
+                        render: (setting) => {
+                            setting.addButton(btn => {
+                                btn.setButtonText('Fehlerspeicher leeren');
+                                btn.setClass('mod-warning');
+                                btn.onClick(async () => {
+                                    this.plugin.settings.errorPool = {};
+                                    await this.plugin.saveSettings();
+                                    new Notice('Fehlerspeicher wurde geleert.');
+                                    this.refreshSettingsTab();
+                                });
+                            });
+                        },
+                    },
+                    {
+                        name: 'Fortschritt & Statistiken zurücksetzen',
+                        desc: `Level ${this.plugin.settings.userLevel} (${this.plugin.settings.userXP} XP), Streak: ${this.plugin.settings.streakDays} Tage.`,
+                        aliases: ['xp', 'level', 'streak', 'fortschritt', 'statistiken', 'fsrs', 'reset'],
+                        render: (setting) => {
+                            setting.addButton(btn => {
+                                btn.setButtonText('Statistiken zurücksetzen');
+                                btn.setClass('mod-warning');
+                                btn.onClick(async () => {
+                                    this.plugin.settings.userXP = 0;
+                                    this.plugin.settings.userLevel = 1;
+                                    this.plugin.settings.streakDays = 0;
+                                    this.plugin.settings.lastActiveDate = '';
+                                    this.plugin.settings.fsrsData = {};
+                                    await this.plugin.saveSettings();
+                                    new Notice('Statistiken wurden zurückgesetzt.');
+                                    this.refreshSettingsTab();
+                                });
+                            });
+                        },
+                    },
+                ],
+            },
+            {
+                type: 'group',
+                heading: '🤖 KI-Prompt & Markdown-Format',
+                items: [
+                    {
+                        name: 'KI-Konverter Prompt',
+                        desc: 'Kopiere diesen Prompt in ein beliebiges Sprachmodell zusammen mit deinen Inhalten.',
+                        aliases: ['ki', 'ai', 'prompt', 'chatgpt', 'claude', 'gemini', 'konverter'],
+                        render: (setting) => {
+                            setting.settingEl.style.flexWrap = 'wrap';
+                            setting.addButton(btn => btn
+                                .setButtonText('📋 Prompt kopieren')
+                                .setCta()
+                                .onClick(() => {
+                                    this.copyTextToClipboard(AI_CONVERTER_PROMPT);
+                                    new Notice('✅ KI-Prompt erfolgreich in die Zwischenablage kopiert!');
+                                    btn.setButtonText('✅ Kopiert!');
+                                    window.setTimeout(() => {
+                                        btn.setButtonText('📋 Prompt kopieren');
+                                    }, 2500);
+                                })
+                            );
+                            const promptArea = setting.settingEl.createEl('textarea', {
+                                cls: 'exam-hub-settings-code-preview',
+                                attr: { readonly: 'true', rows: '8' }
+                            });
+                            promptArea.value = AI_CONVERTER_PROMPT;
+                        },
+                    },
+                    {
+                        name: 'Markdown-Beispieldatei',
+                        desc: 'So muss eine Klausurdatei im Ordner "exams/" aufgebaut sein (Frontmatter, MC-Items mit [x], Freitext und Callouts).',
+                        aliases: ['markdown', 'beispiel', 'example', 'format', 'syntax', 'muster'],
+                        render: (setting) => {
+                            setting.settingEl.style.flexWrap = 'wrap';
+                            setting.addButton(btn => btn
+                                .setButtonText('📄 Beispiel kopieren')
+                                .onClick(() => {
+                                    this.copyTextToClipboard(SAMPLE_MARKDOWN_CODE);
+                                    new Notice('✅ Markdown-Beispiel in die Zwischenablage kopiert!');
+                                    btn.setButtonText('✅ Kopiert!');
+                                    window.setTimeout(() => {
+                                        btn.setButtonText('📄 Beispiel kopieren');
+                                    }, 2500);
+                                })
+                            );
+                            const sampleArea = setting.settingEl.createEl('textarea', {
+                                cls: 'exam-hub-settings-code-preview',
+                                attr: { readonly: 'true', rows: '10' }
+                            });
+                            sampleArea.value = SAMPLE_MARKDOWN_CODE;
+                        },
+                    },
+                ],
+            },
+        ];
+    }
+
+    public override getControlValue(key: string): unknown {
+        return (this.plugin.settings as unknown as Record<string, unknown>)[key];
+    }
+
+    public override async setControlValue(key: string, value: unknown): Promise<void> {
+        if (key === 'examsFolderPath') {
+            const folder = typeof value === 'string' ? value.trim() || 'exams' : 'exams';
+            this.plugin.settings.examsFolderPath = folder;
+            await this.plugin.saveSettings();
+            await this.plugin.indexer.updateFolderPath(folder);
+            return;
+        }
+
+        if (key === 'resultsFolderPath') {
+            const folder = typeof value === 'string' ? value.trim() || 'exams/results' : 'exams/results';
+            this.plugin.settings.resultsFolderPath = folder;
+            await this.plugin.saveSettings();
+            return;
+        }
+
+        if (key === 'defaultPassingScore') {
+            const score = typeof value === 'number' ? value : Number(value) || 60;
+            this.plugin.settings.defaultPassingScore = score;
+            await this.plugin.saveSettings();
+            return;
+        }
+
+        if (key === 'enableSoundEffects') {
+            const enabled = Boolean(value);
+            this.plugin.settings.enableSoundEffects = enabled;
+            this.plugin.soundManager.updateSettings(enabled, this.plugin.settings.soundVolume);
+            await this.plugin.saveSettings();
+            return;
+        }
+
+        if (key === 'soundVolume') {
+            const vol = typeof value === 'number' ? value : Number(value) || 0.5;
+            this.plugin.settings.soundVolume = vol;
+            this.plugin.soundManager.updateSettings(this.plugin.settings.enableSoundEffects, vol);
+            await this.plugin.saveSettings();
+            return;
+        }
+
+        if (key === 'enableConfetti') {
+            this.plugin.settings.enableConfetti = Boolean(value);
+            await this.plugin.saveSettings();
+            return;
+        }
+
+        (this.plugin.settings as unknown as Record<string, unknown>)[key] = value;
+        await this.plugin.saveSettings();
+    }
+
+    private refreshSettingsTab(): void {
+        if (typeof (this as any).update === 'function') {
+            (this as any).update();
+        } else {
+            this.renderSettings();
+        }
     }
 
     public display(): void {
@@ -192,7 +433,7 @@ export class SettingsTab extends PluginSettingTab {
                 btn.onClick(() => {
                     this.plugin.settings.errorPool = {};
                     void this.plugin.saveSettings();
-                    this.renderSettings();
+                    this.refreshSettingsTab();
                 });
             });
 
@@ -209,7 +450,7 @@ export class SettingsTab extends PluginSettingTab {
                     this.plugin.settings.lastActiveDate = '';
                     this.plugin.settings.fsrsData = {};
                     void this.plugin.saveSettings();
-                    this.renderSettings();
+                    this.refreshSettingsTab();
                 });
             });
 
