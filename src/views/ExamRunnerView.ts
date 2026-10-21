@@ -238,8 +238,21 @@ export class ExamRunnerView extends ItemView {
 
         // Progress bar row
         const progressRow = header.createDiv({ cls: 'runner-progress-row' });
-        const progressInfo = progressRow.createDiv({ cls: 'progress-info-text', attr: { id: 'runner-progress-info' } });
+        const progressInfoRow = progressRow.createDiv({ cls: 'runner-progress-info-row' });
+        const progressInfo = progressInfoRow.createDiv({ cls: 'progress-info-text', attr: { id: 'runner-progress-info' } });
         this.updateHeaderProgressText(progressInfo);
+
+        const tilesToggleBtn = progressInfoRow.createEl('button', {
+            cls: 'runner-tiles-toggle-btn',
+            attr: { title: 'Kachelleiste umschalten' }
+        });
+        setIcon(tilesToggleBtn, 'layers');
+        tilesToggleBtn.addEventListener('click', () => {
+            const strip = header.querySelector('#runner-tiles-strip');
+            if (strip) {
+                strip.classList.toggle('is-visible');
+            }
+        });
 
         const barBg = progressRow.createDiv({ cls: 'runner-progress-bar-bg' });
         barBg.createDiv({ cls: 'runner-progress-bar-fill', attr: { id: 'runner-progress-fill' } });
@@ -374,6 +387,13 @@ export class ExamRunnerView extends ItemView {
         badgesGroup.createSpan({ cls: 'q-points-badge', text: `${currentQ.points} Punkte` });
         if (currentQ.blockId) {
             badgesGroup.createSpan({ cls: 'q-block-id-badge', text: `^${currentQ.blockId}` });
+        }
+        const flagBadge = badgesGroup.createSpan({
+            cls: `q-flag-badge ${isFlagged ? 'is-flagged' : ''}`,
+            text: '⚑ Markiert'
+        });
+        if (!isFlagged) {
+            flagBadge.style.display = 'none';
         }
 
         // Prominent Flag button directly on question card
@@ -584,11 +604,18 @@ export class ExamRunnerView extends ItemView {
     }
 
     private updateFlagButton(): void {
+        if (!this.session) return;
+        const currentQ = this.session.getCurrentQuestion();
+        const isFlagged = this.session.isFlagged(currentQ.id);
+
         const btn = this.containerEl.querySelector('#runner-flag-btn') as HTMLElement;
-        if (btn && this.session) {
-            const currentQ = this.session.getCurrentQuestion();
-            const isFlagged = this.session.isFlagged(currentQ.id);
+        if (btn) {
             btn.classList.toggle('is-flagged', isFlagged);
+        }
+
+        const badge = this.containerEl.querySelector('.q-flag-badge') as HTMLElement;
+        if (badge) {
+            badge.style.display = isFlagged ? 'inline-block' : 'none';
         }
     }
 

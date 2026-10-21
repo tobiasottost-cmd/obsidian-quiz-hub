@@ -453,14 +453,37 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     gap: 4px;
 }
 
+.runner-progress-info-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
 .exam-runner-sticky-header .progress-info-text {
     font-size: 0.8rem;
     color: var(--text-muted);
 }
 
+.runner-tiles-toggle-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    padding: 2px 6px;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-s, 4px);
+    transition: all 0.15s ease;
+}
+
+.runner-tiles-toggle-btn:hover {
+    color: var(--text-normal);
+    background-color: var(--background-modifier-hover);
+}
+
 .exam-runner-sticky-header .runner-progress-bar-bg {
     width: 100%;
-    height: 6px;
+    height: 5px;
     background-color: var(--background-modifier-border);
     border-radius: 3px;
     overflow: hidden;
@@ -670,6 +693,16 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     border: 1px solid var(--background-modifier-border);
 }
 
+.q-flag-badge {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background-color: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid #f59e0b;
+    font-weight: 600;
+}
+
 .question-card-flag-btn {
     min-height: 44px;
     padding: 6px 14px;
@@ -696,10 +729,11 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
 }
 
 .question-prompt-container {
-    font-size: 1.15rem;
+    font-size: 1.12rem;
     line-height: 1.6;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     color: var(--text-normal);
+    text-align: left;
 }
 
 .question-prompt-container img {
@@ -712,21 +746,23 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
 .options-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .option-choice-card {
     display: flex;
-    align-items: center;
-    gap: 14px;
-    min-height: 48px;
-    padding: 14px 18px;
+    align-items: flex-start;
+    gap: 12px;
+    min-height: 46px;
+    padding: 12px 16px;
     background-color: var(--background-primary);
     border: 2px solid var(--background-modifier-border);
     border-radius: var(--radius-m, 8px);
     cursor: pointer;
     transition: all 0.15s ease;
     user-select: none;
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .option-choice-card:hover {
@@ -740,15 +776,17 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
 }
 
 .choice-indicator {
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    margin-top: 2px;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid var(--background-modifier-border);
     border-radius: 4px;
     transition: all 0.15s ease;
+    flex-shrink: 0;
 }
 
 .choice-indicator.is-radio {
@@ -763,15 +801,21 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
 
 .choice-letter-label {
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--text-muted);
+    margin-top: 2px;
+    min-width: 18px;
+    flex-shrink: 0;
 }
 
-.choice-text {
+.choice-text,
+.exam-runner-container .option-choice-card .choice-text {
     flex: 1;
-    font-size: 1rem;
-    line-height: 1.4;
+    min-width: 0;
+    font-size: 0.98rem;
+    line-height: 1.45;
     word-break: break-word;
+    text-align: left;
 }
 
 /* --- Freetext Input --- */
@@ -805,15 +849,19 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     flex-shrink: 0;
 }
 
-/* Clear Obsidian mobile navbar so footer navigation is never covered */
+/* Mobile footer navigation with safe-area insets */
 .is-mobile .exam-runner-footer-nav,
 .is-phone .exam-runner-footer-nav {
-    padding-top: 10px;
-    padding-left: calc(12px + max(var(--safe-area-inset-left, 0px), env(safe-area-inset-left, 0px)));
-    padding-right: calc(12px + max(var(--safe-area-inset-right, 0px), env(safe-area-inset-right, 0px)));
-    padding-bottom: calc(12px + var(--navbar-height, 48px) + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
+    padding-top: 8px;
+    padding-left: calc(10px + max(var(--safe-area-inset-left, 0px), env(safe-area-inset-left, 0px)));
+    padding-right: calc(10px + max(var(--safe-area-inset-right, 0px), env(safe-area-inset-right, 0px)));
+    padding-bottom: calc(8px + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
     gap: 8px;
     box-sizing: border-box;
+}
+
+body.has-navbar .is-mobile .exam-runner-footer-nav {
+    padding-bottom: calc(8px + var(--navbar-height, 48px) + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
 }
 
 .exam-runner-footer-nav .nav-btn {
@@ -1326,38 +1374,47 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
 
 /* Smartphone portrait & narrow screens (<= 640px) */
 @media screen and (max-width: 640px) {
+    .exam-runner-sticky-header {
+        padding: 6px 10px;
+        padding-top: calc(6px + max(var(--safe-area-inset-top, 0px), env(safe-area-inset-top, 0px)));
+    }
+
     .exam-runner-sticky-header .runner-header-top-row {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         align-items: center;
         justify-content: space-between;
-        gap: 8px 6px;
-        margin-bottom: 6px;
+        gap: 6px;
+        margin-bottom: 2px;
     }
 
     .exam-runner-sticky-header .header-left-group {
         flex: 1 1 auto;
         min-width: 0;
-        max-width: calc(100% - 95px);
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
+        overflow: hidden;
     }
 
     .exam-runner-sticky-header .header-left-group .runner-back-btn {
-        min-width: 38px;
-        min-height: 38px;
-        padding: 6px;
+        min-width: 32px;
+        min-height: 32px;
+        padding: 4px;
         flex-shrink: 0;
     }
 
     .exam-runner-sticky-header .header-exam-titles {
         min-width: 0;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
 
     .exam-runner-sticky-header .exam-title-text {
-        font-size: 0.88rem;
+        font-size: 0.82rem;
+        font-weight: 700;
         max-width: 100%;
         white-space: nowrap;
         overflow: hidden;
@@ -1366,70 +1423,157 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     }
 
     .exam-runner-sticky-header .exam-module-badge {
-        font-size: 0.72rem;
+        font-size: 0.68rem;
+        color: var(--text-muted);
+        white-space: nowrap;
     }
 
     .exam-runner-sticky-header .runner-timer-container {
         flex: 0 0 auto;
-        margin-left: auto;
-        padding: 4px 10px;
-        font-size: 0.95rem;
-        gap: 5px;
+        margin-left: 2px;
+        padding: 3px 8px;
+        font-size: 0.86rem;
+        gap: 4px;
+        border-radius: 14px;
     }
 
     .exam-runner-sticky-header .header-right-group {
-        flex: 1 1 100%;
+        flex: 0 0 auto;
         display: flex;
         align-items: center;
-        justify-content: flex-end;
-        gap: 8px;
-        margin-top: 2px;
+        gap: 4px;
+        margin-top: 0;
     }
 
     .exam-runner-sticky-header .header-right-group .icon-btn {
-        min-width: 38px;
-        min-height: 38px;
-        padding: 6px;
+        min-width: 32px;
+        min-height: 32px;
+        padding: 4px;
+    }
+
+    .exam-runner-sticky-header .header-right-group .flag-toggle-btn {
+        display: none; /* Thumb navigates it in bottom footer */
     }
 
     .exam-runner-sticky-header .header-right-group .focus-toggle-btn {
-        display: none; /* Focus mode toggle is redundant on mobile phone screens */
+        display: none; /* Redundant on phone screens */
     }
 
     .exam-runner-sticky-header .runner-submit-btn {
-        min-height: 38px;
-        padding: 6px 14px;
-        font-size: 0.84rem;
+        min-height: 32px;
+        padding: 4px 10px;
+        font-size: 0.8rem;
         font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .exam-runner-sticky-header .runner-progress-row {
+        margin-top: 2px;
+        gap: 2px;
+    }
+
+    .exam-runner-sticky-header .runner-progress-info-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .exam-runner-sticky-header .progress-info-text {
+        font-size: 0.72rem;
+        line-height: 1.2;
+    }
+
+    .runner-tiles-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2px 4px;
+        font-size: 0.75rem;
+    }
+
+    .exam-runner-sticky-header .runner-progress-bar-bg {
+        height: 3px;
     }
 
     .runner-question-tiles-strip {
-        gap: 6px;
+        display: none; /* Hidden on mobile by default to liberate screen space; toggleable via icon */
+        gap: 4px;
         padding: 4px 0 2px 0;
+        margin-top: 4px;
+    }
+
+    .runner-question-tiles-strip.is-visible {
+        display: flex;
     }
 
     .runner-tile-item {
-        min-width: 38px;
-        min-height: 38px;
-        font-size: 0.82rem;
+        min-width: 30px;
+        min-height: 30px;
+        font-size: 0.78rem;
+        padding: 2px 5px;
         flex-shrink: 0;
     }
 
+    .exam-runner-question-area {
+        padding: 8px 8px;
+    }
+
+    .question-content-card {
+        padding: 12px 10px;
+        border-radius: 8px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    }
+
     .question-meta-row {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
     }
 
     .question-meta-row .question-card-flag-btn {
-        align-self: flex-start;
-        font-size: 0.82rem;
-        padding: 6px 10px;
+        display: none; /* Replaced by badge in question-meta-left and footer button */
+    }
+
+    .question-prompt-container {
+        font-size: 1.02rem;
+        line-height: 1.45;
+        margin-bottom: 12px;
+        text-align: left;
+    }
+
+    .options-list {
+        gap: 8px;
     }
 
     .option-choice-card {
-        padding: 12px 10px;
-        gap: 10px;
+        padding: 10px 10px;
+        gap: 8px;
+        min-height: 42px;
+    }
+
+    .choice-letter-label {
+        font-size: 0.9rem;
+    }
+
+    .choice-text {
+        font-size: 0.92rem;
+        line-height: 1.4;
+        text-align: left;
+    }
+
+    .exam-runner-footer-nav {
+        padding: 8px 10px;
+        padding-bottom: calc(8px + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
+        gap: 6px;
+    }
+
+    .exam-runner-footer-nav .nav-btn {
+        min-height: 42px;
+        padding: 6px 8px;
+        font-size: 0.85rem;
     }
 
     /* Dashboard mobile optimizations */
