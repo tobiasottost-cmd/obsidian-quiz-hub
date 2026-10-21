@@ -11,6 +11,8 @@ export class LearningSyncManager {
     private lastLocalWriteTime = 0;
     private isMerging = false;
 
+    private windowFocusHandler: (() => void) | null = null;
+
     constructor(app: App, plugin: ExamQuizHubPlugin) {
         this.app = app;
         this.plugin = plugin;
@@ -27,8 +29,12 @@ export class LearningSyncManager {
             return;
         }
 
-        await this.loadAndMerge(false);
-        this.registerVaultWatcher();
+        try {
+            await this.loadAndMerge(false);
+            this.registerVaultWatcher();
+        } catch (err) {
+            console.error('[Exam Quiz Hub] Fehler bei Initialisierung des LearningSyncManagers:', err);
+        }
     }
 
     public destroy(): void {
@@ -39,6 +45,10 @@ export class LearningSyncManager {
         if (this.deleteEventRef) {
             this.app.vault.offref(this.deleteEventRef);
             this.deleteEventRef = null;
+        }
+        if (this.windowFocusHandler && typeof window !== 'undefined') {
+            window.removeEventListener('focus', this.windowFocusHandler);
+            this.windowFocusHandler = null;
         }
     }
 
@@ -61,17 +71,19 @@ export class LearningSyncManager {
         }
 
         const syncPath = this.getSyncFilePath();
-        const file = this.app.vault.getAbstractFileByPath(syncPath);
-
-        if (!(file instanceof TFile)) {
-            // First time or file not yet created in vault: seed file with current local settings
-            await this.writeToVault(this.plugin.settings);
-            return false;
-        }
+        const adapter = this.app.vault.adapter;
 
         try {
             this.isMerging = true;
-            const content = await this.app.vault.read(file);
+            const exists = await adapter.exists(syncPath);
+
+            if (!exists) {
+                // First time or file not yet created in vault: seed file with current local settings
+                await this.writeToVault(this.plugin.settings);
+                return false;
+            }
+
+            const content = await adapter.read(syncPath);
             if (!content || !content.trim()) {
                 await this.writeToVault(this.plugin.settings);
                 return false;
@@ -117,23 +129,26 @@ export class LearningSyncManager {
         }
 
         const syncPath = this.getSyncFilePath();
-        const file = this.app.vault.getAbstractFileByPath(syncPath);
+        const adapter = this.app.vault.adapter;
 
-        if (!forceReset && file instanceof TFile) {
+        if (!forceReset) {
             try {
-                const content = await this.app.vault.read(file);
-                if (content && content.trim()) {
-                    const parsed = JSON.parse(content) as Partial<SyncLearningData>;
-                    const { changed, merged } = LearningSyncManager.mergeLearningData(this.plugin.settings, parsed);
-                    if (changed) {
-                        this.plugin.settings.errorPool = merged.errorPool;
-                        this.plugin.settings.resolvedPool = merged.resolvedPool;
-                        this.plugin.settings.fsrsData = merged.fsrsData;
-                        this.plugin.settings.userXP = merged.userXP;
-                        this.plugin.settings.userLevel = merged.userLevel;
-                        this.plugin.settings.streakDays = merged.streakDays;
-                        this.plugin.settings.lastActiveDate = merged.lastActiveDate;
-                        await this.plugin.saveSettings();
+                const exists = await adapter.exists(syncPath);
+                if (exists) {
+                    const content = await adapter.read(syncPath);
+                    if (content && content.trim()) {
+                        const parsed = JSON.parse(content) as Partial<SyncLearningData>;
+                        const { changed, merged } = LearningSyncManager.mergeLearningData(this.plugin.settings, parsed);
+                        if (changed) {
+                            this.plugin.settings.errorPool = merged.errorPool;
+                            this.plugin.settings.resolvedPool = merged.resolvedPool;
+                            this.plugin.settings.fsrsData = merged.fsrsData;
+                            this.plugin.settings.userXP = merged.userXP;
+                            this.plugin.settings.userLevel = merged.userLevel;
+                            this.plugin.settings.streakDays = merged.streakDays;
+                            this.plugin.settings.lastActiveDate = merged.lastActiveDate;
+                            await this.plugin.saveSettings();
+                        }
                     }
                 }
             } catch (err) {
@@ -141,7 +156,11 @@ export class LearningSyncManager {
             }
         }
 
-        await this.writeToVault(this.plugin.settings);
+        try {
+            await this.writeToVault(this.plugin.settings);
+        } catch (err) {
+            console.error('[Exam Quiz Hub] Fehler beim Speichern der Lerndaten in den Vault:', err);
+        }
     }
 
     private async writeToVault(settings: PluginSettingsData): Promise<void> {
@@ -166,12 +185,7 @@ export class LearningSyncManager {
         const fileContent = JSON.stringify(payload, null, 2);
         this.lastLocalWriteTime = Date.now();
 
-        const existingFile = this.app.vault.getAbstractFileByPath(syncPath);
-        if (existingFile instanceof TFile) {
-            await this.app.vault.modify(existingFile, fileContent);
-        } else {
-            await this.app.vault.create(syncPath, fileContent);
-        }
+        await this.app.vault.adapter.write(syncPath, fileContent);
     }
 
     private async ensureFolderExists(folderPath: string): Promise<void> {
@@ -181,10 +195,10 @@ export class LearningSyncManager {
         for (const part of parts) {
             currentPath = currentPath ? `${currentPath}/${part}` : part;
             const normalized = normalizePath(currentPath);
-            const folder = this.app.vault.getAbstractFileByPath(normalized);
-            if (!folder) {
+            const exists = await this.app.vault.adapter.exists(normalized);
+            if (!exists) {
                 try {
-                    await this.app.vault.createFolder(normalized);
+                    await this.app.vault.adapter.mkdir(normalized);
                 } catch {
                     // Ignore concurrent folder creation
                 }
@@ -218,6 +232,16 @@ export class LearningSyncManager {
                 }, 1000);
             }
         });
+
+        // Window focus check: catches external sync modifications on desktop & mobile when switching apps
+        if (typeof window !== 'undefined') {
+            this.windowFocusHandler = () => {
+                if (Date.now() - this.lastLocalWriteTime > 2000 && !this.isMerging) {
+                    void this.loadAndMerge(false);
+                }
+            };
+            window.addEventListener('focus', this.windowFocusHandler);
+        }
     }
 
     private notifyOpenViews(): void {

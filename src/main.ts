@@ -25,8 +25,12 @@ export default class ExamQuizHubPlugin extends Plugin {
         await this.loadSettings();
 
         // Initialize vault-based learning data sync (mobile & desktop cross-sync)
-        this.learningSyncManager = new LearningSyncManager(this.app, this);
-        await this.learningSyncManager.initialize();
+        try {
+            this.learningSyncManager = new LearningSyncManager(this.app, this);
+            await this.learningSyncManager.initialize();
+        } catch (err) {
+            console.error('[Exam Quiz Hub] Fehler beim Initialisieren des LearningSyncManagers:', err);
+        }
 
         // Initialize mobile-safe audio
         this.soundManager = new SoundManager(
@@ -35,8 +39,12 @@ export default class ExamQuizHubPlugin extends Plugin {
         );
 
         // Initialize vault indexer
-        this.indexer = new VaultIndexer(this.app, this.settings.examsFolderPath);
-        await this.indexer.initialize();
+        try {
+            this.indexer = new VaultIndexer(this.app, this.settings.examsFolderPath);
+            await this.indexer.initialize();
+        } catch (err) {
+            console.error('[Exam Quiz Hub] Fehler beim Initialisieren des Vault-Indexers:', err);
+        }
 
         // Register custom view types
         this.registerView(
