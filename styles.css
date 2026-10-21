@@ -328,19 +328,24 @@
    Exam Runner View Styles & Obsidian Header Integration
    ========================================================================== */
 /* Hide Obsidian's native view-header on Runner and Result views to avoid double header overlap */
-.workspace-leaf-content[data-type="exam-quiz-hub-runner"] .view-header,
-.workspace-leaf-content[data-type="exam-quiz-hub-result"] .view-header {
-    display: none !important;
+body .workspace .workspace-leaf-content[data-type="exam-quiz-hub-runner"] > .view-header,
+body .workspace-leaf-content[data-type="exam-quiz-hub-runner"] > .view-header,
+body .workspace .workspace-leaf-content[data-type="exam-quiz-hub-result"] > .view-header,
+body .workspace-leaf-content[data-type="exam-quiz-hub-result"] > .view-header {
+    display: none;
 }
 
-.workspace-leaf-content[data-type="exam-quiz-hub-runner"] .view-content,
-.workspace-leaf-content[data-type="exam-quiz-hub-result"] .view-content {
-    height: 100% !important;
-    padding: 0 !important;
+body .workspace .workspace-leaf-content[data-type="exam-quiz-hub-runner"] > .view-content,
+body .workspace-leaf-content[data-type="exam-quiz-hub-runner"] > .view-content,
+body .workspace .workspace-leaf-content[data-type="exam-quiz-hub-result"] > .view-content,
+body .workspace-leaf-content[data-type="exam-quiz-hub-result"] > .view-content {
+    height: 100%;
+    padding: 0;
 }
 
-.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] .view-header {
-    position: relative !important;
+body.is-mobile .workspace .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .view-header,
+body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .view-header {
+    position: relative;
 }
 
 .exam-runner-container {
