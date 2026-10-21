@@ -328,19 +328,32 @@
    Exam Runner View Styles & Obsidian Header Integration
    ========================================================================== */
 /* Hide Obsidian's native view-header on Runner and Result views to avoid double header overlap */
+.workspace-leaf[data-type="exam-quiz-hub-runner"] .view-header,
+.workspace-leaf[data-type="exam-quiz-hub-result"] .view-header,
+.workspace-leaf-content[data-type="exam-quiz-hub-runner"] .view-header,
+.workspace-leaf-content[data-type="exam-quiz-hub-result"] .view-header,
+.workspace-leaf-content[data-type="exam-quiz-hub-runner"] > .view-header,
+.workspace-leaf-content[data-type="exam-quiz-hub-result"] > .view-header,
 body .workspace .workspace-leaf-content[data-type="exam-quiz-hub-runner"] > .view-header,
 body .workspace-leaf-content[data-type="exam-quiz-hub-runner"] > .view-header,
 body .workspace .workspace-leaf-content[data-type="exam-quiz-hub-result"] > .view-header,
-body .workspace-leaf-content[data-type="exam-quiz-hub-result"] > .view-header {
-    display: none;
+body .workspace-leaf-content[data-type="exam-quiz-hub-result"] > .view-header,
+.exam-runner-hide-header {
+    display: none !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
 }
 
 body .workspace .workspace-leaf-content[data-type="exam-quiz-hub-runner"] > .view-content,
 body .workspace-leaf-content[data-type="exam-quiz-hub-runner"] > .view-content,
 body .workspace .workspace-leaf-content[data-type="exam-quiz-hub-result"] > .view-content,
 body .workspace-leaf-content[data-type="exam-quiz-hub-result"] > .view-content {
-    height: 100%;
-    padding: 0;
+    height: 100% !important;
+    padding: 0 !important;
 }
 
 body.is-mobile .workspace .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .view-header,
@@ -363,15 +376,13 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     z-index: 10;
     background-color: var(--background-secondary);
     border-bottom: 1px solid var(--background-modifier-border);
-    padding: 10px 16px;
+    padding: 8px 16px;
 }
 
-/* Safe-area insets for mobile & notch support */
+/* Mobile sticky header (clean padding without extra redundant top margin) */
 .is-mobile .exam-runner-sticky-header,
 .is-phone .exam-runner-sticky-header {
-    padding-top: calc(10px + max(var(--safe-area-inset-top, 0px), env(safe-area-inset-top, 0px)));
-    padding-left: calc(12px + max(var(--safe-area-inset-left, 0px), env(safe-area-inset-left, 0px)));
-    padding-right: calc(12px + max(var(--safe-area-inset-right, 0px), env(safe-area-inset-right, 0px)));
+    padding: 8px 12px;
 }
 
 .exam-runner-sticky-header .runner-header-top-row {
@@ -854,19 +865,15 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     flex-shrink: 0;
 }
 
-/* Mobile footer navigation with safe-area insets */
+/* Mobile footer navigation: ensure it clears Obsidian navbar and mobile browser navigation bar */
 .is-mobile .exam-runner-footer-nav,
 .is-phone .exam-runner-footer-nav {
-    padding-top: 8px;
+    padding-top: 10px;
     padding-left: calc(10px + max(var(--safe-area-inset-left, 0px), env(safe-area-inset-left, 0px)));
     padding-right: calc(10px + max(var(--safe-area-inset-right, 0px), env(safe-area-inset-right, 0px)));
-    padding-bottom: calc(8px + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
+    padding-bottom: calc(12px + var(--navbar-height, 48px) + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
     gap: 8px;
     box-sizing: border-box;
-}
-
-body.has-navbar .is-mobile .exam-runner-footer-nav {
-    padding-bottom: calc(8px + var(--navbar-height, 48px) + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
 }
 
 .exam-runner-footer-nav .nav-btn {
@@ -1327,10 +1334,7 @@ body.has-navbar .is-mobile .exam-runner-footer-nav {
 
 @media screen and (max-width: 768px) {
     .exam-runner-sticky-header {
-        padding-top: calc(10px + max(var(--safe-area-inset-top, 0px), env(safe-area-inset-top, 0px)));
-        padding-left: calc(12px + max(var(--safe-area-inset-left, 0px), env(safe-area-inset-left, 0px)));
-        padding-right: calc(12px + max(var(--safe-area-inset-right, 0px), env(safe-area-inset-right, 0px)));
-        padding-bottom: 8px;
+        padding: 8px 12px;
     }
 
     .exam-runner-footer-nav {
@@ -1381,7 +1385,6 @@ body.has-navbar .is-mobile .exam-runner-footer-nav {
 @media screen and (max-width: 640px) {
     .exam-runner-sticky-header {
         padding: 6px 10px;
-        padding-top: calc(6px + max(var(--safe-area-inset-top, 0px), env(safe-area-inset-top, 0px)));
     }
 
     .exam-runner-sticky-header .runner-header-top-row {
@@ -1571,7 +1574,7 @@ body.has-navbar .is-mobile .exam-runner-footer-nav {
 
     .exam-runner-footer-nav {
         padding: 8px 10px;
-        padding-bottom: calc(8px + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
+        padding-bottom: calc(12px + var(--navbar-height, 48px) + max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px)));
         gap: 6px;
     }
 

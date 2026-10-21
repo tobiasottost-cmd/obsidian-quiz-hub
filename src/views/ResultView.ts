@@ -57,6 +57,11 @@ export class ResultView extends ItemView {
         container.empty();
         container.addClass('exam-result-container');
 
+        const nativeHeader = this.containerEl.querySelector('.view-header');
+        if (nativeHeader) {
+            nativeHeader.addClass('exam-runner-hide-header');
+        }
+
         if (!this.result || !this.sessionState) {
             container.createEl('p', { text: 'Keine Auswertungsdaten vorhanden.' });
             return;

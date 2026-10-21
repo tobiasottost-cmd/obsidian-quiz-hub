@@ -150,6 +150,11 @@ export class ExamRunnerView extends ItemView {
             container.addClass('is-focus-mode');
         }
 
+        const nativeHeader = this.containerEl.querySelector('.view-header');
+        if (nativeHeader) {
+            nativeHeader.addClass('exam-runner-hide-header');
+        }
+
         if (!this.session) {
             container.createEl('p', { text: 'Keine aktive Klausursitzung.' });
             return;
