@@ -40,6 +40,10 @@
     background-color: var(--background-modifier-hover);
 }
 
+.exam-hub-setting-wrap {
+    flex-wrap: wrap;
+}
+
 .exam-hub-settings-code-preview {
     width: 100%;
     margin: 8px 0 20px 0;

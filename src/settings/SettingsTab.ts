@@ -226,7 +226,7 @@ export class SettingsTab extends PluginSettingTab {
                         desc: 'Kopiere diesen Prompt in ein beliebiges Sprachmodell zusammen mit deinen Inhalten.',
                         aliases: ['ki', 'ai', 'prompt', 'chatgpt', 'claude', 'gemini', 'konverter'],
                         render: (setting) => {
-                            setting.settingEl.style.flexWrap = 'wrap';
+                            setting.settingEl.addClass('exam-hub-setting-wrap');
                             setting.addButton(btn => btn
                                 .setButtonText('📋 Prompt kopieren')
                                 .setCta()
@@ -251,7 +251,7 @@ export class SettingsTab extends PluginSettingTab {
                         desc: 'So muss eine Klausurdatei im Ordner "exams/" aufgebaut sein (Frontmatter, MC-Items mit [x], Freitext und Callouts).',
                         aliases: ['markdown', 'beispiel', 'example', 'format', 'syntax', 'muster'],
                         render: (setting) => {
-                            setting.settingEl.style.flexWrap = 'wrap';
+                            setting.settingEl.addClass('exam-hub-setting-wrap');
                             setting.addButton(btn => btn
                                 .setButtonText('📄 Beispiel kopieren')
                                 .onClick(() => {
@@ -329,8 +329,9 @@ export class SettingsTab extends PluginSettingTab {
     }
 
     private refreshSettingsTab(): void {
-        if (typeof (this as any).update === 'function') {
-            (this as any).update();
+        const tabWithUpdate = this as { update?: () => void };
+        if (typeof tabWithUpdate.update === 'function') {
+            tabWithUpdate.update();
         } else {
             this.renderSettings();
         }
