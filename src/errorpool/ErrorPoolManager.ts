@@ -31,6 +31,10 @@ export class ErrorPoolManager {
                         if (settings.errorPool[qId].consecutiveSuccess >= 2) {
                             // Mastery achieved: remove from error pool!
                             delete settings.errorPool[qId];
+                            if (!settings.resolvedPool) {
+                                settings.resolvedPool = {};
+                            }
+                            settings.resolvedPool[qId] = Date.now();
                             resolvedCount++;
                         }
                     }
@@ -52,6 +56,10 @@ export class ErrorPoolManager {
                     };
                     addedCount++;
                 }
+
+                if (settings.resolvedPool && settings.resolvedPool[qId]) {
+                    delete settings.resolvedPool[qId];
+                }
             }
         }
 
@@ -70,5 +78,6 @@ export class ErrorPoolManager {
      */
     public static clearPool(settings: PluginSettingsData): void {
         settings.errorPool = {};
+        settings.resolvedPool = {};
     }
 }

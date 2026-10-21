@@ -178,6 +178,37 @@ export class SettingsTab extends PluginSettingTab {
                 heading: 'Daten & Speicher',
                 items: [
                     {
+                        name: 'Lerndaten im Vault synchronisieren (Mobil & Desktop)',
+                        desc: 'Speichert Fehlerspeicher, XP und Lernfortschritt in einer synchronisierbaren Vault-Datei (.quiz-learning-data.json) für automatischen Abgleich über Obsidian Sync, iCloud oder Git.',
+                        aliases: ['sync', 'synchronisation', 'mobile', 'desktop', 'abgleich', 'cloud'],
+                        control: {
+                            type: 'toggle',
+                            key: 'syncLearningDataInVault',
+                            defaultValue: true,
+                        },
+                    },
+                    {
+                        name: 'Jetzt mit Vault-Datei abgleichen',
+                        desc: 'Liest die Lerndaten aus der Vault-Datei ein und führt sie verlustfrei mit diesem Gerät zusammen.',
+                        aliases: ['sync', 'abgleichen', 'aktualisieren', 'reload'],
+                        render: (setting) => {
+                            setting.addButton(btn => {
+                                btn.setButtonText('🔄 Jetzt synchronisieren');
+                                btn.onClick(async () => {
+                                    btn.setButtonText('⏳ Synchronisiere...');
+                                    btn.setDisabled(true);
+                                    const changed = await this.plugin.learningSyncManager.loadAndMerge(true);
+                                    this.refreshSettingsTab();
+                                    if (!changed) {
+                                        new Notice('✅ Bereits auf dem neuesten Stand!');
+                                    }
+                                    btn.setButtonText('🔄 Jetzt synchronisieren');
+                                    btn.setDisabled(false);
+                                });
+                            });
+                        },
+                    },
+                    {
                         name: 'Fehlerspeicher zurücksetzen',
                         desc: `Aktuell befinden sich ${Object.keys(this.plugin.settings.errorPool).length} Frage(n) im Fehlerspeicher.`,
                         aliases: ['fehlerspeicher', 'error pool', 'fehler', 'leeren', 'reset'],
@@ -187,7 +218,9 @@ export class SettingsTab extends PluginSettingTab {
                                 btn.setClass('mod-warning');
                                 btn.onClick(async () => {
                                     this.plugin.settings.errorPool = {};
+                                    this.plugin.settings.resolvedPool = {};
                                     await this.plugin.saveSettings();
+                                    await this.plugin.learningSyncManager.saveLearningData(true);
                                     new Notice('Fehlerspeicher wurde geleert.');
                                     this.refreshSettingsTab();
                                 });
@@ -209,6 +242,7 @@ export class SettingsTab extends PluginSettingTab {
                                     this.plugin.settings.lastActiveDate = '';
                                     this.plugin.settings.fsrsData = {};
                                     await this.plugin.saveSettings();
+                                    await this.plugin.learningSyncManager.saveLearningData(true);
                                     new Notice('Statistiken wurden zurückgesetzt.');
                                     this.refreshSettingsTab();
                                 });
@@ -324,6 +358,16 @@ export class SettingsTab extends PluginSettingTab {
             return;
         }
 
+        if (key === 'syncLearningDataInVault') {
+            const enabled = Boolean(value);
+            this.plugin.settings.syncLearningDataInVault = enabled;
+            await this.plugin.saveSettings();
+            if (enabled) {
+                await this.plugin.learningSyncManager.saveLearningData();
+            }
+            return;
+        }
+
         (this.plugin.settings as unknown as Record<string, unknown>)[key] = value;
         await this.plugin.saveSettings();
     }
@@ -424,6 +468,38 @@ export class SettingsTab extends PluginSettingTab {
 
         new Setting(containerEl).setName('Daten & Speicher').setHeading();
 
+        new Setting(containerEl)
+            .setName('Lerndaten im Vault synchronisieren')
+            .setDesc('Speichert Fehlerspeicher, XP und Lernfortschritt in einer synchronisierbaren Vault-Datei (.quiz-learning-data.json) für automatischen Abgleich über Obsidian Sync, iCloud oder Git.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.syncLearningDataInVault)
+                .onChange(async (value) => {
+                    this.plugin.settings.syncLearningDataInVault = value;
+                    await this.plugin.saveSettings();
+                    if (value) {
+                        await this.plugin.learningSyncManager.saveLearningData();
+                    }
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Jetzt mit Vault-Datei abgleichen')
+            .setDesc('Liest die Lerndaten aus der Vault-Datei ein und führt sie verlustfrei mit diesem Gerät zusammen.')
+            .addButton(btn => {
+                btn.setButtonText('🔄 Jetzt synchronisieren');
+                btn.onClick(async () => {
+                    btn.setButtonText('⏳ Synchronisiere...');
+                    btn.setDisabled(true);
+                    const changed = await this.plugin.learningSyncManager.loadAndMerge(true);
+                    this.refreshSettingsTab();
+                    if (!changed) {
+                        new Notice('✅ Bereits auf dem neuesten Stand!');
+                    }
+                    btn.setButtonText('🔄 Jetzt synchronisieren');
+                    btn.setDisabled(false);
+                });
+            });
+
         const errorCount = Object.keys(this.plugin.settings.errorPool).length;
         new Setting(containerEl)
             .setName('Fehlerspeicher zurücksetzen')
@@ -431,9 +507,11 @@ export class SettingsTab extends PluginSettingTab {
             .addButton(btn => {
                 btn.setButtonText('Fehlerspeicher leeren');
                 btn.setClass('mod-warning');
-                btn.onClick(() => {
+                btn.onClick(async () => {
                     this.plugin.settings.errorPool = {};
-                    void this.plugin.saveSettings();
+                    this.plugin.settings.resolvedPool = {};
+                    await this.plugin.saveSettings();
+                    await this.plugin.learningSyncManager.saveLearningData(true);
                     this.refreshSettingsTab();
                 });
             });
@@ -444,13 +522,14 @@ export class SettingsTab extends PluginSettingTab {
             .addButton(btn => {
                 btn.setButtonText('Statistiken zurücksetzen');
                 btn.setClass('mod-warning');
-                btn.onClick(() => {
+                btn.onClick(async () => {
                     this.plugin.settings.userXP = 0;
                     this.plugin.settings.userLevel = 1;
                     this.plugin.settings.streakDays = 0;
                     this.plugin.settings.lastActiveDate = '';
                     this.plugin.settings.fsrsData = {};
-                    void this.plugin.saveSettings();
+                    await this.plugin.saveSettings();
+                    await this.plugin.learningSyncManager.saveLearningData(true);
                     this.refreshSettingsTab();
                 });
             });

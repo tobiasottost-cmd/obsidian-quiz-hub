@@ -101,6 +101,18 @@ export interface ErrorPoolItem {
     lastFailedAt: number;
 }
 
+export interface SyncLearningData {
+    version: number;
+    lastSyncTimestamp: number;
+    errorPool: Record<string, ErrorPoolItem>;
+    resolvedPool: Record<string, number>;
+    fsrsData: Record<string, FSRSRecord>;
+    userXP: number;
+    userLevel: number;
+    streakDays: number;
+    lastActiveDate: string;
+}
+
 export interface PluginSettingsData {
     examsFolderPath: string;
     resultsFolderPath: string;
@@ -114,7 +126,10 @@ export interface PluginSettingsData {
     lastActiveDate: string; // YYYY-MM-DD
     activeSession: ActiveSessionState | null;
     errorPool: Record<string, ErrorPoolItem>;
+    resolvedPool: Record<string, number>;
     fsrsData: Record<string, FSRSRecord>;
+    syncLearningDataInVault: boolean;
+    learningDataFileName: string;
 }
 
 export const DEFAULT_SETTINGS: PluginSettingsData = {
@@ -130,5 +145,8 @@ export const DEFAULT_SETTINGS: PluginSettingsData = {
     lastActiveDate: '',
     activeSession: null,
     errorPool: {},
-    fsrsData: {}
+    resolvedPool: {},
+    fsrsData: {},
+    syncLearningDataInVault: true,
+    learningDataFileName: '.quiz-learning-data.json'
 };

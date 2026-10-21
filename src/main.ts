@@ -12,14 +12,20 @@ import { ScoringEngine } from './scoring/ScoringEngine';
 import { GamificationEngine } from './gamification/GamificationEngine';
 import { ErrorPoolManager } from './errorpool/ErrorPoolManager';
 import { ExamGenerator } from './session/ExamGenerator';
+import { LearningSyncManager } from './sync/LearningSyncManager';
 
 export default class ExamQuizHubPlugin extends Plugin {
     public settings: PluginSettingsData = DEFAULT_SETTINGS;
     public indexer!: VaultIndexer;
     public soundManager!: SoundManager;
+    public learningSyncManager!: LearningSyncManager;
 
     public async onload(): Promise<void> {
         await this.loadSettings();
+
+        // Initialize vault-based learning data sync (mobile & desktop cross-sync)
+        this.learningSyncManager = new LearningSyncManager(this.app, this);
+        await this.learningSyncManager.initialize();
 
         // Initialize mobile-safe audio
         this.soundManager = new SoundManager(
@@ -125,6 +131,9 @@ export default class ExamQuizHubPlugin extends Plugin {
         if (this.soundManager) {
             this.soundManager.destroy();
         }
+        if (this.learningSyncManager) {
+            this.learningSyncManager.destroy();
+        }
     }
 
     public async loadSettings(): Promise<void> {
@@ -201,6 +210,7 @@ export default class ExamQuizHubPlugin extends Plugin {
         // Clear active session from crash-recovery
         this.settings.activeSession = null;
         await this.saveSettings();
+        await this.learningSyncManager.saveLearningData();
 
         // Reuse the leaf that was running the exam instead of opening a new tab
         const { workspace } = this.app;

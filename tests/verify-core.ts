@@ -153,4 +153,86 @@ assert(level2.level === 2, '260 XP reaches Level 2');
 const streakInfo = GamificationEngine.recordActivity(settings);
 assert(streakInfo.streakDays === 1, 'Initial streak is 1 day');
 
+console.log('\n--- Testing LearningDataMerger (Cross-Device Sync) ---');
+import { LearningDataMerger } from '../src/sync/LearningDataMerger';
+
+const localSettings: PluginSettingsData = {
+    ...DEFAULT_SETTINGS,
+    userXP: 300,
+    userLevel: 2,
+    streakDays: 2,
+    lastActiveDate: '2026-10-20',
+    errorPool: {
+        'q-pc-only': {
+            filePath: 'exams/pc.md',
+            questionId: 'q-pc-only',
+            failCount: 1,
+            consecutiveSuccess: 0,
+            lastFailedAt: 1000
+        },
+        'q-conflict': {
+            filePath: 'exams/conflict.md',
+            questionId: 'q-conflict',
+            failCount: 1,
+            consecutiveSuccess: 0,
+            lastFailedAt: 1000
+        }
+    },
+    resolvedPool: {
+        'q-resolved-on-pc': 5000 // Mastered on PC at t=5000
+    }
+};
+
+const remoteData = {
+    version: 1,
+    lastSyncTimestamp: 6000,
+    userXP: 550, // Mobile earned more XP!
+    userLevel: 2,
+    streakDays: 4,
+    lastActiveDate: '2026-10-21', // Mobile was active more recently!
+    errorPool: {
+        'q-mobile-only': {
+            filePath: 'exams/mobile.md',
+            questionId: 'q-mobile-only',
+            failCount: 2,
+            consecutiveSuccess: 0,
+            lastFailedAt: 3000
+        },
+        'q-conflict': {
+            filePath: 'exams/conflict.md',
+            questionId: 'q-conflict',
+            failCount: 3, // Mobile failed it more often
+            consecutiveSuccess: 1,
+            lastFailedAt: 4000 // newer
+        },
+        'q-resolved-on-pc': {
+            filePath: 'exams/old.md',
+            questionId: 'q-resolved-on-pc',
+            failCount: 1,
+            consecutiveSuccess: 0,
+            lastFailedAt: 2000 // older than PC resolution timestamp (5000)
+        }
+    },
+    resolvedPool: {}
+};
+
+const { changed, merged } = LearningDataMerger.merge(localSettings, remoteData);
+
+assert(changed === true, 'LearningDataMerger flagged changes');
+assert(merged.userXP === 550, 'Merged userXP took highest value (550 XP)');
+assert(merged.userLevel === 2, 'Merged userLevel calculated correctly');
+assert(merged.streakDays === 4, 'Merged streakDays took mobile newest streak (4)');
+assert(merged.lastActiveDate === '2026-10-21', 'Merged lastActiveDate took newest date');
+
+// Error Pool Checks
+assert(merged.errorPool['q-pc-only'] !== undefined, 'PC-only error preserved');
+assert(merged.errorPool['q-mobile-only'] !== undefined, 'Mobile-only error merged in');
+assert(merged.errorPool['q-conflict'] !== undefined, 'Conflict question preserved');
+assert(merged.errorPool['q-conflict'].failCount === 3, 'Conflict question took max failCount (3)');
+assert(merged.errorPool['q-conflict'].consecutiveSuccess === 1, 'Conflict question took newer consecutiveSuccess');
+
+// Mastery / Resolution check:
+assert(merged.errorPool['q-resolved-on-pc'] === undefined, 'Mastered question not resurrected by stale mobile error');
+assert(merged.resolvedPool['q-resolved-on-pc'] === 5000, 'ResolvedPool preserved resolution timestamp');
+
 console.log('\n🎉 ALL CORE LOGIC AND SPECIFICATION UNIT TESTS PASSED!');
