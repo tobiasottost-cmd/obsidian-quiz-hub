@@ -1,6 +1,6 @@
 {
   "name": "obsidian-exam-quiz-hub",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "High-performance, mobile-ready offline exam simulation, quiz hub and spaced repetition for Obsidian.",
   "main": "main.js",
   "scripts": {
