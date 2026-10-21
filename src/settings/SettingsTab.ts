@@ -1,5 +1,6 @@
-import { App, Notice, PluginSettingTab, Setting, SettingDefinitionItem } from 'obsidian';
+import { App, Notice, PluginSettingTab, Setting, SettingDefinitionItem, TFile } from 'obsidian';
 import type ExamQuizHubPlugin from '../main';
+import { BlockIdAutoAssigner } from '../parser/BlockIdAutoAssigner';
 
 const AI_CONVERTER_PROMPT = `Du bist ein Experte für didaktische Prüfungserstellung und Markdown-Formatierung.
 Wandle die folgenden Lerninhalte, Altfragen oder Prüfungsfragen in das exakte Format für das Obsidian Plugin "Exam and Quiz Hub" um.
@@ -245,6 +246,53 @@ export class SettingsTab extends PluginSettingTab {
                                     await this.plugin.learningSyncManager.saveLearningData(true);
                                     new Notice('Statistiken wurden zurückgesetzt.');
                                     this.refreshSettingsTab();
+                                });
+                            });
+                        },
+                    },
+                ],
+            },
+            {
+                type: 'group',
+                heading: '⚡ Automatisierung & Block-IDs',
+                items: [
+                    {
+                        name: 'Fehlende Frage-Block-IDs automatisch ergänzen',
+                        desc: 'Fügt allen Fragen in Klausurnotizen, die noch keine Block-ID haben, automatisch eine saubere ID an (z.B. ^q-m1-01). Bestehende IDs bleiben unberührt. (Tipp: Auch per Rechtsklick in Notizen oder über die Befehlspalette verfügbar).',
+                        aliases: ['blockid', 'block-id', 'automatisch', 'generieren', 'fragen', 'id', 'prefix'],
+                        render: (setting) => {
+                            setting.addButton(btn => {
+                                btn.setButtonText('⚡ Block-IDs in allen Klausuren ergänzen');
+                                btn.setCta();
+                                btn.onClick(async () => {
+                                    btn.setButtonText('⏳ Durchsuche Klausuren...');
+                                    btn.setDisabled(true);
+                                    try {
+                                        const examFiles = this.plugin.indexer.getAllExamFiles();
+                                        let totalAdded = 0;
+                                        let filesUpdated = 0;
+                                        for (const exam of examFiles) {
+                                            const file = this.plugin.app.vault.getAbstractFileByPath(exam.sourceFilePath);
+                                            if (file instanceof TFile) {
+                                                const added = await BlockIdAutoAssigner.processFile(this.plugin.app, file);
+                                                if (added > 0) {
+                                                    totalAdded += added;
+                                                    filesUpdated++;
+                                                }
+                                            }
+                                        }
+                                        if (totalAdded > 0) {
+                                            new Notice(`✅ ${totalAdded} Block-ID(s) in ${filesUpdated} Klausurdatei(en) erfolgreich ergänzt!`);
+                                        } else {
+                                            new Notice('ℹ️ Alle Fragen in deinen Klausuren besitzen bereits eine Block-ID.');
+                                        }
+                                    } catch (err) {
+                                        new Notice('❌ Fehler beim Ergänzen der Block-IDs.');
+                                        console.error('Error auto-assigning block IDs:', err);
+                                    } finally {
+                                        btn.setButtonText('⚡ Block-IDs in allen Klausuren ergänzen');
+                                        btn.setDisabled(false);
+                                    }
                                 });
                             });
                         },

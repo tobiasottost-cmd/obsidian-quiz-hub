@@ -3,6 +3,7 @@ import { ScoringEngine } from '../src/scoring/ScoringEngine';
 import { ExamGenerator } from '../src/session/ExamGenerator';
 import { ErrorPoolManager } from '../src/errorpool/ErrorPoolManager';
 import { GamificationEngine } from '../src/gamification/GamificationEngine';
+import { BlockIdAutoAssigner } from '../src/parser/BlockIdAutoAssigner';
 import { ActiveSessionState, DEFAULT_SETTINGS, PluginSettingsData } from '../src/types';
 
 function assert(condition: boolean, message: string) {
@@ -264,5 +265,64 @@ assert(merged.errorPool['q-conflict'].consecutiveSuccess === 1, 'Conflict questi
 // Mastery / Resolution check:
 assert(merged.errorPool['q-resolved-on-pc'] === undefined, 'Mastered question not resurrected by stale mobile error');
 assert(merged.resolvedPool['q-resolved-on-pc'] === 5000, 'ResolvedPool preserved resolution timestamp');
+
+console.log('\n--- Testing BlockIdAutoAssigner and Hash Fallback ---');
+
+// 1. Test ExamParser fallback when user provides NO block-ID
+const noBlockIdMd = `---
+module: Bio
+title: Klausur ohne Block-IDs
+---
+## Erste Frage ohne Block-ID
+type: single-choice
+- [x] Antwort A
+- [ ] Antwort B
+
+---
+
+## Zweite Frage ohne Block-ID
+type: freetext
+points: 2
+`;
+const parsedNoBlock = ExamParser.parse(noBlockIdMd, 'exams/bio/test.md');
+assert(parsedNoBlock.questions.length === 2, 'Parsed 2 questions without explicit block IDs');
+assert(parsedNoBlock.questions[0].id.startsWith('q-'), 'Question 1 got automatic content hash ID: ' + parsedNoBlock.questions[0].id);
+assert(parsedNoBlock.questions[1].id.startsWith('q-'), 'Question 2 got automatic content hash ID: ' + parsedNoBlock.questions[1].id);
+assert(parsedNoBlock.questions[0].id !== parsedNoBlock.questions[1].id, 'Questions have distinct hash IDs');
+
+// 2. Test BlockIdAutoAssigner auto-assigning IDs
+const unassignedMd = `---
+module: "M1 - Grundlagen"
+title: Test
+---
+## Erste Frage
+type: single-choice
+- [x] Ja
+
+## Zweite Frage ^q-m1-01
+type: single-choice
+- [x] Ja
+
+## Dritte Frage
+type: single-choice
+- [x] Ja
+`;
+
+const autoResult = BlockIdAutoAssigner.processMarkdown(unassignedMd);
+assert(autoResult.addedCount === 2, 'Added exactly 2 missing block IDs');
+assert(autoResult.updatedContent.includes('## Erste Frage ^q-m1-02'), 'First question received ^q-m1-02 (avoiding collision with 01)');
+assert(autoResult.updatedContent.includes('## Zweite Frage ^q-m1-01'), 'Existing ^q-m1-01 was preserved');
+assert(autoResult.updatedContent.includes('## Dritte Frage ^q-m1-03'), 'Third question received ^q-m1-03');
+
+// 3. Test Idempotency: Running again should add 0
+const secondRun = BlockIdAutoAssigner.processMarkdown(autoResult.updatedContent);
+assert(secondRun.addedCount === 0, 'Second run added 0 block IDs (idempotent)');
+assert(secondRun.updatedContent === autoResult.updatedContent, 'Content remained identical');
+
+// 4. Test CRLF preservation
+const crlfMd = "---\r\nmodule: Psych\r\n---\r\n## Frage 1\r\n- [x] Ok\r\n";
+const crlfResult = BlockIdAutoAssigner.processMarkdown(crlfMd);
+assert(crlfResult.updatedContent.includes('\r\n'), 'CRLF line endings preserved');
+assert(crlfResult.updatedContent.includes('## Frage 1 ^q-psych-01'), 'Assigned clean prefix ^q-psych-01');
 
 console.log('\n🎉 ALL CORE LOGIC AND SPECIFICATION UNIT TESTS PASSED!');

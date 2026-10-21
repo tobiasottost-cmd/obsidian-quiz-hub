@@ -107,7 +107,10 @@ points: 5
 ```
 
 > [!TIP]
-> **Block-IDs (`^q-kond-01`):** Hänge an das Ende jeder Frage-Überschrift eine eindeutige ID (wie `^q-thema-01`). So erkennt das Plugin die Frage zuverlässig wieder – selbst wenn du später den Fragetext umformulierst!
+> **Block-IDs sind optional – aber super nützlich:**
+> * Lässt du sie weg, berechnet das Plugin automatisch einen internen Hash. Alles funktioniert sofort ohne manuelles Eintippen!
+> * Mit einer Block-ID (`^q-thema-01`) bleibt deine Lernstatistik (Fehlerspeicher & FSRS) jedoch auch dann erhalten, wenn du die Frage später umformulierst.
+> * **Tipp für Faule:** Du musst sie nicht von Hand tippen! Nutze einfach per Rechtsklick in der Notiz **„⚡ Frage-Block-IDs automatisch ergänzen“** oder den Button in den Plugin-Einstellungen, um alle Fragen mit einem Klick automatisch nummerieren zu lassen.
 
 ---
 

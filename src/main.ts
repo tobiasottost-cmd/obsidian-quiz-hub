@@ -1,4 +1,4 @@
-import { Plugin, WorkspaceLeaf } from 'obsidian';
+import { Notice, Plugin, TFile, WorkspaceLeaf } from 'obsidian';
 import { ActiveSessionState, DEFAULT_SETTINGS, PluginSettingsData } from './types';
 import { VaultIndexer } from './parser/VaultIndexer';
 import { SoundManager } from './gamification/SoundManager';
@@ -13,6 +13,7 @@ import { GamificationEngine } from './gamification/GamificationEngine';
 import { ErrorPoolManager } from './errorpool/ErrorPoolManager';
 import { ExamGenerator } from './session/ExamGenerator';
 import { LearningSyncManager } from './sync/LearningSyncManager';
+import { BlockIdAutoAssigner } from './parser/BlockIdAutoAssigner';
 
 export default class ExamQuizHubPlugin extends Plugin {
     public settings: PluginSettingsData = DEFAULT_SETTINGS;
@@ -100,6 +101,88 @@ export default class ExamQuizHubPlugin extends Plugin {
                 }
             }
         });
+
+        // Command to auto-assign block-IDs to active note
+        this.addCommand({
+            id: 'auto-assign-question-block-ids',
+            name: 'Fehlende Frage-Block-IDs in aktiver Notiz automatisch ergänzen',
+            editorCallback: (editor) => {
+                const content = editor.getValue();
+                const { updatedContent, addedCount } = BlockIdAutoAssigner.processMarkdown(content);
+                if (addedCount > 0) {
+                    editor.setValue(updatedContent);
+                    new Notice(`✅ ${addedCount} Frage-Block-ID(s) automatisch eingefügt!`);
+                } else {
+                    new Notice('ℹ️ Alle Fragen in dieser Notiz besitzen bereits eine Block-ID.');
+                }
+            }
+        });
+
+        // Command to auto-assign block-IDs to all exam files in vault
+        this.addCommand({
+            id: 'auto-assign-all-exam-block-ids',
+            name: 'Fehlende Frage-Block-IDs in allen Klausur-Dateien automatisch ergänzen',
+            callback: async () => {
+                const examFiles = this.indexer.getAllExamFiles();
+                let totalAdded = 0;
+                let filesUpdated = 0;
+                for (const exam of examFiles) {
+                    const file = this.app.vault.getAbstractFileByPath(exam.sourceFilePath);
+                    if (file instanceof TFile) {
+                        const added = await BlockIdAutoAssigner.processFile(this.app, file);
+                        if (added > 0) {
+                            totalAdded += added;
+                            filesUpdated++;
+                        }
+                    }
+                }
+                if (totalAdded > 0) {
+                    new Notice(`✅ ${totalAdded} Block-IDs in ${filesUpdated} Klausurdatei(en) ergänzt!`);
+                } else {
+                    new Notice('ℹ️ Alle Klausuren besitzen bereits vollständige Block-IDs.');
+                }
+            }
+        });
+
+        // Context menu in editor: right click inside any note
+        this.registerEvent(
+            this.app.workspace.on('editor-menu', (menu, editor) => {
+                menu.addItem((item) => {
+                    item.setTitle('⚡ Frage-Block-IDs automatisch ergänzen')
+                        .setIcon('hash')
+                        .onClick(() => {
+                            const content = editor.getValue();
+                            const { updatedContent, addedCount } = BlockIdAutoAssigner.processMarkdown(content);
+                            if (addedCount > 0) {
+                                editor.setValue(updatedContent);
+                                new Notice(`✅ ${addedCount} Frage-Block-ID(s) automatisch ergänzt!`);
+                            } else {
+                                new Notice('ℹ️ Alle Fragen besitzen bereits eine Block-ID.');
+                            }
+                        });
+                });
+            })
+        );
+
+        // Context menu in file explorer: right click on any markdown file
+        this.registerEvent(
+            this.app.workspace.on('file-menu', (menu, file) => {
+                if (file instanceof TFile && file.extension === 'md') {
+                    menu.addItem((item) => {
+                        item.setTitle('⚡ Frage-Block-IDs automatisch ergänzen')
+                            .setIcon('hash')
+                            .onClick(async () => {
+                                const added = await BlockIdAutoAssigner.processFile(this.app, file);
+                                if (added > 0) {
+                                    new Notice(`✅ ${added} Frage-Block-ID(s) in "${file.basename}" ergänzt!`);
+                                } else {
+                                    new Notice('ℹ️ Alle Fragen besitzen bereits eine Block-ID.');
+                                }
+                            });
+                    });
+                }
+            })
+        );
 
         // Settings tab
         this.addSettingTab(new SettingsTab(this.app, this));
