@@ -56,6 +56,16 @@ Entwickelt gemäß **Projekt-Spezifikation v3** und strikt nach den **Mobile & D
 ### 8. Automatischer Notizen-Export (`exams/results/`)
 - Speichere Klausurberichte direkt per Knopfdruck als auditierbare Markdown-Notiz in `exams/results/YYYY-MM-DD_HH-mm_[Modul]_[Titel].md` mit Frontmatter, Callout-Zusammenfassung und Aufgabenprotokoll.
 
+### 9. Vault-basierte Multi-Device Synchronisation (Desktop & Mobile)
+- **Problem gelöst:** Herkömmliche Plugin-Daten (`data.json` in `.obsidian/`) sind oft gerätespezifisch oder werden bei separaten Mobil-Konfigurationen (`.obsidian.mobile/`) nicht geteilt.
+- **Automatischer Cross-Platform-Sync:** Fehlerspeicher, FSRS-Wiederholungsdaten, XP, Level und Streaks werden in einer synchronisierbaren Vault-Datei (`exams/.quiz-learning-data.json`) gespeichert.
+- **Kompatibel mit allen Sync-Diensten:** Funktioniert standardmäßig und ohne komplexe Einstellungen mit **Obsidian Sync, iCloud, Git, Syncthing und Remotely Save**.
+- **Konfliktfreier 2-Wege-Merge:**
+  - Fehlerfragen von Smartphone und Desktop werden verlustfrei zusammengeführt.
+  - **Mastery-Schutz:** Verhindert, dass bereits gemeisterte Fragen durch ältere Sync-Stände wiederbelebt werden.
+  - Punktestände (XP) und Streaks werden stets auf den höchsten bzw. aktuellsten Stand synchronisiert.
+- **Live-Reaktivität:** Hintergrund-Aktualisierungen durch Sync werden erkannt und aktualisieren geöffnete Dashboards sofort.
+
 ---
 
 ## 🚀 Installation & Testen im eigenen Vault
