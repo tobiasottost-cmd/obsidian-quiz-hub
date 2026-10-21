@@ -73,7 +73,7 @@ export class DashboardView extends ItemView {
 
         const barBg = xpProgressCard.createDiv({ cls: 'exam-hub-progress-bar-bg' });
         const barFill = barBg.createDiv({ cls: 'exam-hub-progress-bar-fill' });
-        barFill.style.width = `${levelInfo.progressPercentage}%`;
+        barFill.setCssStyles({ width: `${levelInfo.progressPercentage}%` });
 
         // Streak
         const streakCard = stats.createDiv({ cls: 'exam-hub-stat-card streak-card' });

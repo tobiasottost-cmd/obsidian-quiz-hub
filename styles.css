@@ -694,6 +694,7 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
 }
 
 .q-flag-badge {
+    display: none;
     font-size: 0.75rem;
     padding: 2px 8px;
     border-radius: 12px;
@@ -701,6 +702,10 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     color: #f59e0b;
     border: 1px solid #f59e0b;
     font-weight: 600;
+}
+
+.q-flag-badge.is-visible {
+    display: inline-block;
 }
 
 .question-card-flag-btn {

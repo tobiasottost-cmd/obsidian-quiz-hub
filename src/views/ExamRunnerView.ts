@@ -388,13 +388,10 @@ export class ExamRunnerView extends ItemView {
         if (currentQ.blockId) {
             badgesGroup.createSpan({ cls: 'q-block-id-badge', text: `^${currentQ.blockId}` });
         }
-        const flagBadge = badgesGroup.createSpan({
-            cls: `q-flag-badge ${isFlagged ? 'is-flagged' : ''}`,
+        badgesGroup.createSpan({
+            cls: `q-flag-badge ${isFlagged ? 'is-visible' : ''}`,
             text: '⚑ Markiert'
         });
-        if (!isFlagged) {
-            flagBadge.style.display = 'none';
-        }
 
         // Prominent Flag button directly on question card
         const cardFlagText = Platform.isMobile
@@ -599,7 +596,7 @@ export class ExamRunnerView extends ItemView {
             const answered = this.session.getAnsweredCount();
             const total = this.session.getTotalQuestions();
             const pct = total > 0 ? (answered / total) * 100 : 0;
-            fill.style.width = `${pct}%`;
+            fill.setCssStyles({ width: `${pct}%` });
         }
     }
 
@@ -615,7 +612,7 @@ export class ExamRunnerView extends ItemView {
 
         const badge = this.containerEl.querySelector('.q-flag-badge') as HTMLElement;
         if (badge) {
-            badge.style.display = isFlagged ? 'inline-block' : 'none';
+            badge.classList.toggle('is-visible', isFlagged);
         }
     }
 
