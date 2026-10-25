@@ -198,7 +198,7 @@ ${jsonContent}
                 try {
                     const parsed: unknown = JSON.parse(candidate);
                     if (typeof parsed === 'object' && parsed !== null) {
-                        return parsed as Partial<SyncLearningData>;
+                        return parsed;
                     }
                 } catch {
                     // Not valid JSON in this block, check next block
@@ -212,7 +212,7 @@ ${jsonContent}
             try {
                 const parsed: unknown = JSON.parse(trimmed);
                 if (typeof parsed === 'object' && parsed !== null) {
-                    return parsed as Partial<SyncLearningData>;
+                    return parsed;
                 }
             } catch {
                 // Not valid JSON
