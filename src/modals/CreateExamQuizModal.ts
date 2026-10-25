@@ -146,7 +146,7 @@ export class CreateExamQuizModal extends Modal {
         }
 
         // 4. Action Cards (3 easy ways to create)
-        const actionsHeader = contentEl.createEl('h4', {
+        contentEl.createEl('h4', {
             cls: 'create-modal-actions-heading',
             text: 'Wie möchtest du starten?'
         });
@@ -167,8 +167,8 @@ export class CreateExamQuizModal extends Modal {
             cls: 'mod-cta action-card-btn',
             text: '📄 Notiz erstellen & öffnen'
         });
-        createBtn.addEventListener('click', async () => {
-            await this.handleCreateFromTemplate();
+        createBtn.addEventListener('click', () => {
+            void this.handleCreateFromTemplate();
         });
 
         // Action 2: Import from Clipboard
@@ -185,8 +185,8 @@ export class CreateExamQuizModal extends Modal {
             cls: 'action-card-btn',
             text: '📋 Aus Zwischenablage einfügen'
         });
-        clipBtn.addEventListener('click', async () => {
-            await this.handleCreateFromClipboard();
+        clipBtn.addEventListener('click', () => {
+            void this.handleCreateFromClipboard();
         });
 
         // Action 3: Copy AI Prompt for this Subject
