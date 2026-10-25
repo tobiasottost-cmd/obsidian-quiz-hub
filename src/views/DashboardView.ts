@@ -563,19 +563,21 @@ export class DashboardView extends ItemView {
             cls: 'tamagotchi-action-btn pet-btn',
             text: '💖 Streicheln'
         });
-        petBtn.addEventListener('click', async () => {
-            TamagotchiEngine.pet(this.plugin.settings);
-            if (this.plugin.settings.enableSoundEffects) {
-                this.plugin.soundManager.playClickSound();
-            }
-            await this.plugin.saveSettings();
-            await this.plugin.learningSyncManager.saveLearningData();
+        petBtn.addEventListener('click', () => {
+            void (async () => {
+                TamagotchiEngine.pet(this.plugin.settings);
+                if (this.plugin.settings.enableSoundEffects) {
+                    this.plugin.soundManager.playClickSound();
+                }
+                await this.plugin.saveSettings();
+                await this.plugin.learningSyncManager.saveLearningData();
 
-            const heartEl = imgWrapper.createSpan({ cls: 'tamagotchi-floating-heart', text: '💖' });
-            window.setTimeout(() => heartEl.remove(), 1200);
+                const heartEl = imgWrapper.createSpan({ cls: 'tamagotchi-floating-heart', text: '💖' });
+                window.setTimeout(() => heartEl.remove(), 1200);
 
-            new Notice(`Du hast ${companionName} gestreichelt! +Zuneigung & Energie 🥰`);
-            this.render();
+                new Notice(`Du hast ${companionName} gestreichelt! +Zuneigung & Energie 🥰`);
+                this.render();
+            })();
         });
 
         const feedQuizBtn = actionsRow.createEl('button', {
@@ -628,15 +630,17 @@ class RenameCompanionModal extends Modal {
         cancelBtn.addEventListener('click', () => this.close());
 
         const saveBtn = btnRow.createEl('button', { text: 'Speichern', cls: 'mod-cta' });
-        saveBtn.addEventListener('click', async () => {
-            const newName = input.value.trim();
-            if (newName) {
-                this.plugin.settings.tamagotchiName = newName;
-                await this.plugin.saveSettings();
-                await this.plugin.learningSyncManager.saveLearningData();
-                this.onRenamed();
-                this.close();
-            }
+        saveBtn.addEventListener('click', () => {
+            void (async () => {
+                const newName = input.value.trim();
+                if (newName) {
+                    this.plugin.settings.tamagotchiName = newName;
+                    await this.plugin.saveSettings();
+                    await this.plugin.learningSyncManager.saveLearningData();
+                    this.onRenamed();
+                    this.close();
+                }
+            })();
         });
     }
 

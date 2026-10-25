@@ -90,6 +90,85 @@ Kriterien:
 > [!explanation]
 > Maximale Punktzahl: 3 Punkte. Wichtiges Paradigma: Festinger & Carlsmith (1959).`;
 
+const AI_QUIZ_CONVERTER_PROMPT = `Du bist ein Experte für didaktische Quiz-Erstellung und Markdown-Formatierung.
+Wandle die folgenden Lerninhalte, Notizen oder Fragen in das exakte Quiz-Format für das Obsidian Plugin "Exam and Quiz Hub" um.
+
+WICHTIGE REGELN & SYNTAX FÜR QUIZZE:
+1. Dateikopf (YAML Frontmatter) ganz oben:
+---
+type: quiz
+module: [Modulkürzel, z.B. M1 oder Biologie]
+title: [Aussagekräftiger Quiztitel, z.B. Wissens-Check Konditionierung]
+shuffleQuestions: true
+shuffleOptions: true
+---
+(Hinweis: Quizze sind zeitlimitfrei und benötigen weder Zeitlimit noch Bestehensgrenze. Die Fragen liefern direktes Feedback nach jeder Beantwortung!)
+
+2. Frageüberschriften:
+- Jede Aufgabe MUSS mit einer H2-Überschrift beginnen: '## [Fragetext] ^q-[id]'
+- Am Ende der Überschrift MUSS eine stabile Block-ID stehen, z.B. ^q-quiz-01 oder ^q-bio-02.
+- Trenne Aufgaben jeweils mit drei Bindestrichen '---'.
+
+3. Multiple-Choice Aufgaben (Universitärer 5-Aussagen-Standard oder Single-Choice):
+- type: multiple-choice (oder single-choice)
+- points: 5 (bzw. 1 bei Single-Choice)
+- Aussagen als Checkboxen:
+  - [x] für wahre/zutreffende Aussagen
+  - [ ] für falsche/unzutreffende Aussagen
+- Erklärungs-Callout direkt darunter (wird im Quiz sofort nach der Beantwortung eingeblendet):
+  > [!explanation]
+  > Ausführliche didaktische Erklärung zur Musterlösung.
+
+4. Freitext-Aufgaben:
+- type: freetext
+- points: [Maximalpunkte, z.B. 3]
+- Musterloesung: [Vollständige Musterantwort]
+- Kriterien:
+  1. [Kriterium 1] (1P)
+  2. [Kriterium 2] (1P)
+- Erklärungs-Callout:
+  > [!explanation]
+  > Didaktische Hinweise zur Punktevergabe.
+
+---
+HIER SIND DIE ZU KONVERTIERENDEN FRAGEN/INHALTE:
+[Füge hier deine Notizen, Folien oder Fragen ein]`;
+
+const SAMPLE_QUIZ_MARKDOWN_CODE = `---
+type: quiz
+module: M1
+title: Wissens-Check Klassische Konditionierung
+shuffleQuestions: true
+shuffleOptions: true
+---
+
+## Welche Aussagen zur klassischen Konditionierung treffen zu? ^q-quiz-kond-01
+type: multiple-choice
+points: 5
+
+- [x] Ein unkonditionierter Reiz (UCS) löst reflexartig eine UCR aus.
+- [ ] Extinktion löscht die Gedächtnisspur vollständig und unwiderruflich.
+- [x] Spontanerholung beschreibt das Wiederauftreten der CR nach einer Pause.
+- [ ] Generalisierung bedeutet, dass nur der identische Reiz wirkt.
+- [x] Konditionierung höherer Ordnung baut auf einem konditionierten Reiz auf.
+
+> [!explanation]
+> Extinktion ist Hemmungslernen (Inhibition), kein physisches Vergessen. Generalisierung reagiert auch auf Reizähnlichkeiten.
+
+---
+
+## Welche Struktur ist primär für die Konsolidierung deklarativer Gedächtnisinhalte zuständig? ^q-quiz-bio-02
+type: single-choice
+points: 1
+
+- [ ] Kleinhirn (Cerebellum)
+- [x] Hippocampus
+- [ ] Basalganglien
+- [ ] Medulla oblongata
+
+> [!explanation]
+> Der Hippocampus im medialen Temporallappen ist entscheidend für die Überführung ins Langzeitgedächtnis.`;
+
 export class SettingsTab extends PluginSettingTab {
     private plugin: ExamQuizHubPlugin;
 
@@ -383,6 +462,55 @@ export class SettingsTab extends PluginSettingTab {
                                 attr: { readonly: 'true', rows: '10' }
                             });
                             sampleArea.value = SAMPLE_MARKDOWN_CODE;
+                        },
+                    },
+                    {
+                        name: 'KI-Quiz-Konverter Prompt',
+                        desc: 'Optimierter Prompt zur Erstellung zeitlimitfreier Quizze mit direktem Feedback (type: quiz).',
+                        aliases: ['quiz', 'prompt', 'ki', 'ai', 'check', 'konverter'],
+                        render: (setting) => {
+                            setting.settingEl.addClass('exam-hub-setting-wrap');
+                            setting.addButton(btn => btn
+                                .setButtonText('⚡ Quiz-Prompt kopieren')
+                                .setCta()
+                                .onClick(() => {
+                                    this.copyTextToClipboard(AI_QUIZ_CONVERTER_PROMPT);
+                                    new Notice('✅ KI-Quiz-Prompt in die Zwischenablage kopiert!');
+                                    btn.setButtonText('✅ Kopiert!');
+                                    window.setTimeout(() => {
+                                        btn.setButtonText('⚡ Quiz-Prompt kopieren');
+                                    }, 2500);
+                                })
+                            );
+                            const promptArea = setting.settingEl.createEl('textarea', {
+                                cls: 'exam-hub-settings-code-preview',
+                                attr: { readonly: 'true', rows: '8' }
+                            });
+                            promptArea.value = AI_QUIZ_CONVERTER_PROMPT;
+                        },
+                    },
+                    {
+                        name: 'Markdown-Beispieldatei (Quiz)',
+                        desc: 'Syntax für Quiz-Dateien mit direktem Feedback im Ordner "exams/" (type: quiz).',
+                        aliases: ['quiz', 'beispiel', 'syntax', 'muster', 'markdown'],
+                        render: (setting) => {
+                            setting.settingEl.addClass('exam-hub-setting-wrap');
+                            setting.addButton(btn => btn
+                                .setButtonText('📄 Quiz-Beispiel kopieren')
+                                .onClick(() => {
+                                    this.copyTextToClipboard(SAMPLE_QUIZ_MARKDOWN_CODE);
+                                    new Notice('✅ Quiz-Beispiel in die Zwischenablage kopiert!');
+                                    btn.setButtonText('✅ Kopiert!');
+                                    window.setTimeout(() => {
+                                        btn.setButtonText('📄 Quiz-Beispiel kopieren');
+                                    }, 2500);
+                                })
+                            );
+                            const sampleArea = setting.settingEl.createEl('textarea', {
+                                cls: 'exam-hub-settings-code-preview',
+                                attr: { readonly: 'true', rows: '10' }
+                            });
+                            sampleArea.value = SAMPLE_QUIZ_MARKDOWN_CODE;
                         },
                     },
                 ],
@@ -793,6 +921,50 @@ export class SettingsTab extends PluginSettingTab {
             attr: { readonly: 'true', rows: '10' }
         });
         sampleArea.value = SAMPLE_MARKDOWN_CODE;
+
+        // --- QUIZ PROMPT & QUIZ SAMPLE ---
+        new Setting(containerEl)
+            .setName('KI-Quiz-Konverter Prompt (type: quiz)')
+            .setDesc('Optimierter Prompt zur Erstellung zeitlimitfreier Quizze mit direktem Feedback nach jeder Frage.')
+            .addButton(btn => btn
+                .setButtonText('⚡ Quiz-Prompt kopieren')
+                .setCta()
+                .onClick(() => {
+                    this.copyTextToClipboard(AI_QUIZ_CONVERTER_PROMPT);
+                    new Notice('✅ KI-Quiz-Prompt erfolgreich in die Zwischenablage kopiert!');
+                    btn.setButtonText('✅ Kopiert!');
+                    window.setTimeout(() => {
+                        btn.setButtonText('⚡ Quiz-Prompt kopieren');
+                    }, 2500);
+                })
+            );
+
+        const quizPromptArea = containerEl.createEl('textarea', {
+            cls: 'exam-hub-settings-code-preview',
+            attr: { readonly: 'true', rows: '8' }
+        });
+        quizPromptArea.value = AI_QUIZ_CONVERTER_PROMPT;
+
+        new Setting(containerEl)
+            .setName('Markdown-Beispieldatei (Quiz-Modus)')
+            .setDesc('So sieht eine zeitlimitfreie Quiz-Datei mit direktem Feedback und Erklärungs-Callouts aus.')
+            .addButton(btn => btn
+                .setButtonText('📄 Quiz-Beispiel kopieren')
+                .onClick(() => {
+                    this.copyTextToClipboard(SAMPLE_QUIZ_MARKDOWN_CODE);
+                    new Notice('✅ Quiz-Markdown-Beispiel in die Zwischenablage kopiert!');
+                    btn.setButtonText('✅ Kopiert!');
+                    window.setTimeout(() => {
+                        btn.setButtonText('📄 Quiz-Beispiel kopieren');
+                    }, 2500);
+                })
+            );
+
+        const quizSampleArea = containerEl.createEl('textarea', {
+            cls: 'exam-hub-settings-code-preview',
+            attr: { readonly: 'true', rows: '10' }
+        });
+        quizSampleArea.value = SAMPLE_QUIZ_MARKDOWN_CODE;
     }
 
     private copyTextToClipboard(text: string): void {

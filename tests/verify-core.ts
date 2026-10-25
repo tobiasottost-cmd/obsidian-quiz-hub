@@ -1,3 +1,12 @@
+if (typeof window === 'undefined') {
+    (global as unknown as { window: unknown }).window = {
+        setInterval: global.setInterval.bind(global),
+        clearInterval: global.clearInterval.bind(global),
+        addEventListener: () => {},
+        removeEventListener: () => {}
+    };
+}
+
 import { ExamParser } from '../src/parser/ExamParser';
 import { ScoringEngine } from '../src/scoring/ScoringEngine';
 import { ExamGenerator } from '../src/session/ExamGenerator';

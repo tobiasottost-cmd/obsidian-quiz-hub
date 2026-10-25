@@ -1,48 +1,75 @@
 # 🎓 Exam and Quiz Hub für Obsidian
 
-**Die all-in-one Lern- und Klausursimulation direkt in deinem Obsidian-Vault.**  
-Bereite dich optimal auf Prüfungen vor, simuliere echte Klausuren unter realistischem Zeitdruck, trainiere gezielt deine Wissenslücken mit dem intelligenten Fehlerspeicher und verfolge deinen Lernerfolg – **100 % offline, datenschutzsicher und auf Desktop, Smartphone & Tablet**.
+**Die all-in-one Lern-, Quiz- und Klausursimulation direkt in deinem Obsidian-Vault.**  
+Bereite dich optimal auf Prüfungen vor, simuliere echte Klausuren unter realistischem Zeitdruck, lerne entspannt im zeitlimitfreien **Quiz-Modus mit sofortigem Feedback**, füttere deinen virtuellen **Tamagotchi-Drachen** mit täglichen Lernerfolgen und schließe Wissenslücken mit dem intelligenten Fehlerspeicher – **100 % offline, datenschutzsicher und optimiert für Desktop, Smartphone & Tablet**.
 
 ---
 
 ## 🚀 Schnellstart in 3 Schritten
 
 1. **Plugin öffnen:** Klicke auf das **Doktorhut-Icon** in der linken Obsidian-Seitenleiste (oder drücke `Strg + P` bzw. `Cmd + P` und wähle *„Exam and Quiz Hub: Klausur-Dashboard öffnen“*).
-2. **Klausurnotiz anlegen:** Lege im Ordner `exams/` eine Markdown-Notiz an (z. B. `exams/Biologie/Zellbiologie.md`) mit deinen Prüfungsfragen.
-3. **Training starten:** Öffne das Dashboard und klicke bei deiner Klausur auf **„Klausur starten“** – oder trainiere einen gemischten **Modul-Mix** bzw. deinen **Fehlerspeicher**.
+2. **Klausur- oder Quiznotiz anlegen:** Lege im Ordner `exams/` eine Markdown-Notiz an (z. B. `exams/Biologie/Zellbiologie.md`).
+   - Nutze `type: exam` für echte Prüfungssimulationen mit Countdown-Timer.
+   - Nutze `type: quiz` für entspannte Wissens-Checks mit direktem Feedback nach jeder Frage.
+3. **Training starten:** Öffne das Dashboard und klicke auf **„⏱️ Klausur starten“** oder **„⚡ Als Quiz spielen“** – oder trainiere einen gemischten **Modul-Mix** bzw. deinen **Fehlerspeicher**.
+
+---
+
+## ⚡ Klausur-Modus vs. Quiz-Modus: Dual-Play für jedes Bedürfnis
+
+Exam and Quiz Hub bietet zwei perfekt aufeinander abgestimmte Lernmodi:
+
+| Feature | ⏱️ Klausur-Modus (`type: exam`) | ⚡ Quiz-Modus (`type: quiz`) |
+| :--- | :--- | :--- |
+| **Ziel** | Realistische Prüfungssimulation | Aktives Lernen & Wissensaneignung |
+| **Zeitlimit** | Countdown-Timer mit Prüfungsabgabe | 100 % zeitlimitfrei |
+| **Feedback** | Gesamtauswertung am Prüfungsende | Sofortiges Feedback (Grün/Rot) nach jeder Frage |
+| **Erklärungen** | Nach Abgabe im Ergebnisbericht | Direkt nach Klick auf „Prüfen & Lösung anzeigen“ |
+| **Matrix-Anzeige** | Zeigt beantwortete / markierte Fragen | Färbt Kacheln live nach erreichten Punkten (Grün / Gelb / Rot) |
+| **Dual-Play** | — | **Jede Klausur kann auf dem Dashboard auch als Quiz gespielt werden!** |
+
+---
+
+## 🐉 Das Tamagotchi: Dein virtueller Lernbegleiter
+
+Auf deinem Dashboard begleitet dich dein persönlicher Wissensdrache durchs Studium:
+* **10 liebevolle Evolutionsstufen:** Vom gesprenkelten Drachen-Ei über den frisch geschlüpften Wicht und den Schuldrachen bis zum legendären ehrwürdigen Wissensdrachen.
+* **Gekoppelt an deinen Fleiß:** Der Drache wächst mit deiner täglichen **Lern-Streak** oder deinen erreichten **Levels / XP**.
+* **Füttern durch Lernen:** Jedes gelöste Quiz schenkt **+25 % Sättigung**, jede absolvierte Klausur **+40 %**.
+* **Kein Frust:** Der Drache kann niemals sterben! Bei längerer Inaktivität wird er lediglich schläfrig (min. 15 % Sättigung) und bittet in seiner Sprechblase um kleine Wissens-Snacks.
+* **Interaktiv:** Streichle deinen Drachen für Zuneigung (`💖 Streicheln`) oder starte direkt ein 5-Fragen-Schnell-Quiz (`⚡ Jetzt füttern`). Über das Stift-Icon kannst du ihm jederzeit einen individuellen Namen geben!
+* **Anpassbar:** In den Einstellungen lässt sich das Tamagotchi auf Wunsch mit einem Klick aktivieren oder deaktivieren.
 
 ---
 
 ## 💡 Wertvolle Tipps für deinen Prüfungserfolg
 
-### 1. 🤖 Schnelle Fragenerstellung mit dem KI-Prompt
-Du musst Fragen nicht mühsam von Hand abtippen:
+### 1. 🤖 Fragenerstellung mit den optimierten KI-Prompts
+Du musst Fragen nicht mühsam von Hand tippen:
 * Öffne die **Plugin-Einstellungen** in Obsidian.
-* Klicke ganz unten auf **„📋 Prompt kopieren“**.
+* Wähle ganz unten den passenden Prompt:
+  * **„📋 Klausur-Prompt kopieren“** für Prüfungen mit Zeitlimit (`type: exam`).
+  * **„⚡ Quiz-Prompt kopieren“** für schnelle Wissens-Checks (`type: quiz`).
 * Füge den Prompt zusammen mit deinen Vorlesungsfolien, Altklausuren oder PDF-Zusammenfassungen in ein beliebiges Sprachmodell (z. B. **ChatGPT, Claude oder Gemini**) ein.
-* Die KI liefert dir den fertigen Markdown-Code, den du einfach als Notiz in deinen `exams/`-Ordner kopierst.
+* Kopiere den Markdown-Code als Notiz in deinen `exams/`-Ordner. Fertig!
 
-### 2. 🎯 Der intelligente Fehlerspeicher (Gezieltes Meistern von Lücken)
-* **Automatisches Sammeln:** Jede Frage, bei der du in einer Klausur Punkte verlierst, wandert automatisch in deinen persönlichen Fehlerspeicher.
+### 2. 🎯 Der intelligente Fehlerspeicher (2×-Mastery-Regel)
+* **Automatisches Sammeln:** Jede Frage, bei der du in einer Klausur oder einem Quiz Punkte verlierst, wandert automatisch in deinen persönlichen Fehlerspeicher.
 * **Die 2×-Mastery-Regel:** Eine Frage gilt erst dann als dauerhaft verstanden und gemeistert, wenn du sie im Fehlerspeicher-Training **zweimal hintereinander fehlerfrei** beantwortest. Erst dann verlässt sie den Pool.
-* **Tipp:** Starte jeden Lerntag mit einem kurzen Durchlauf des Fehlerspeichers auf dem Dashboard, um alte Schwachstellen dauerhaft auszumerzen!
+* **Tipp:** Starte jeden Lerntag mit einem kurzen Durchlauf des Fehlerspeichers auf dem Dashboard!
 
-### 3. 🔀 Modul-Mix: Die ultimative Prüfungssimulation
-* In echten Klausuren kommen Fragen selten nach Themen sortiert.
-* Nutze auf dem Dashboard den **Dynamischen Klausur-Generator**:
-  * Wähle die Module aus, die abgeprüft werden sollen (z. B. `Anatomie + Physiologie`).
-  * Stelle mit dem Schieberegler die gewünschte Fragenanzahl ein (z. B. 20 Fragen).
-  * Das Plugin mischt die Fragen und berechnet automatisch das Zeitlimit.
+### 3. 🔀 Dynamischer Modul-Mix: Klausur oder Quiz auf Knopfdruck
+* Nutze auf dem Dashboard den **Modul-Mix Generator**:
+  * Wähle die gewünschten Module aus (z. B. `M1 + Biologie`).
+  * Wähle zwischen **Klausur** (mit Zeitlimit) oder **Quiz** (mit direktem Feedback).
+  * Bestimme die Fragenanzahl (z. B. 15 Fragen). Das Plugin mischt die Fragen zufällig durch.
 
-### 4. 📱 Nahtlos unterwegs auf dem Smartphone lernen
-* Das Plugin ist von Grund auf für Smartphones und Tablets optimiert:
-  * Keine Überlagerung mit der Obsidian-Navigationsleiste oder der Smartphone-Statusleiste.
-  * Schnelle Daumen-Navigation über die Kacheln (`1`, `2`, `3`...) und die Fußleiste.
-  * Über die Schaltfläche **„Fragen-Matrix“ (▦)** kannst du jederzeit den Gesamtüberblick über alle Aufgaben aufrufen.
-  * Flaggen-Funktion (`⚐ Markieren`): Markiere unsichere Fragen und überprüfe sie vor der Abgabe noch einmal.
+### 4. 📱 Nahtlos mobil auf dem Smartphone & Tablet lernen
+* Vollständig touch-optimiert ($\ge 44 \times 44\,\text{px}$ Touch-Targets) ohne störende Statusleistenüberlagerung.
+* Schnelle Daumen-Navigation über die Kacheln (`1`, `2`, `3`...) und die Fußleiste.
+* Über die **„Fragen-Matrix“ (▦)** hast du jederzeit den Gesamtüberblick.
 
 ### 5. ⌨️ Schneller navigieren am Desktop mit Tastenkürzeln
-Am PC oder Mac kannst du Klausuren komplett ohne Maus bedienen:
 | Taste | Aktion |
 | :--- | :--- |
 | `1`, `2`, `3`, `4`, `5` | Antwortoptionen A bis E an- oder abwählen |
@@ -51,79 +78,62 @@ Am PC oder Mac kannst du Klausuren komplett ohne Maus bedienen:
 | `M` | Frage für spätere Überprüfung markieren / entmarkieren (`⚑`) |
 | `Strg + Enter` / `Cmd + Enter` | Klausur abschließen und auswerten |
 
-### 6. 📄 Detaillierte Ergebnisberichte speichern
-* Nach jeder Klausur siehst du eine detaillierte Auswertung mit Prozentangabe, Notenstatus und Vergleich mit Musterlösungen.
-* Klicke auf **„📄 Ergebnis als Vault-Notiz speichern“**, um die Auswertung dauerhaft im Ordner `exams/results/` abzulegen. So kannst du deine Entwicklung über das gesamte Semester nachverfolgen.
-
-### 7. 🛡️ Crash-Schutz & Auto-Save
-* Keine Angst vor leeren Akkus oder versehentlich geschlossenen Tabs: Der aktuelle Klausurstand wird alle 15 Sekunden sowie beim Wechseln von Apps automatisch zwischengespeichert.
-* Beim nächsten Start fragt dich Obsidian sofort, ob du die unvollendete Klausur mit exakt verbleibender Restzeit fortsetzen möchtest.
+### 6. 🛡️ Crash-Schutz & Auto-Save
+* Alle 15 Sekunden sowie beim Verlassen der App speichert das Plugin deinen Sitzungsstand automatisch. Bei versehentlichem Schließen fragt Obsidian sofort, ob du die Sitzung nahtlos fortsetzen möchtest.
 
 ---
 
-## 📝 So formatierst du deine Prüfungsfragen
+## 📝 Formatierung: Klausuren vs. Quizze
 
-Alle Prüfungen liegen als Markdown-Dateien im Ordner `exams/` (oder Unterordnern wie `exams/Psychologie/`).
+Alle Notizen liegen als Markdown-Dateien im Ordner `exams/` (oder Unterordnern wie `exams/M1/`).
 
-### 1. Kopfdaten (YAML Frontmatter)
-Ganz oben in der Notiz legst du grundlegende Einstellungen fest:
+### 1. Quiz-Notiz (`type: quiz`)
+Perfekt für Übungsfragen, Karteikarten-Ersatz und Wissens-Checks:
 
 ```markdown
 ---
-type: exam
+type: quiz
 module: M1
-title: Probeklausur Grundlagen
-timeLimitMinutes: 90
-passingScore: 75%
+title: Wissens-Check Klassische Konditionierung
 shuffleQuestions: true
 shuffleOptions: true
 ---
-```
 
-* **`module`**: Name oder Kürzel des Fachs (z. B. `M1`, `Biologie`, `Recht`).
-* **`title`**: Titel der Prüfung.
-* **`timeLimitMinutes`**: Zeitlimit in Minuten (Standard: **90 Minuten**).
-* **`passingScore`**: Bestehensgrenze in Prozent (Standard: **75 %**).
-* **`shuffleQuestions` / `shuffleOptions`**: Auf `true` setzen, um Fragen und Antworten bei jedem Durchlauf zufällig zu durchmischen.
-
----
-
-### 2. Multiple-Choice-Fragen (5-Aussagen-Standard)
-Jede Multiple-Choice-Frage beginnt mit einer `##`-Überschrift und enthält 5 Aussagen mit Checkboxen:
-
-```markdown
-## Welche Aussagen zur klassischen Konditionierung treffen zu? ^q-kond-01
+## Welche Aussagen zur klassischen Konditionierung treffen zu? ^q-quiz-01
 type: multiple-choice
 points: 5
 
 - [x] Ein unkonditionierter Reiz (UCS) löst reflexartig eine UCR aus.
 - [ ] Extinktion löscht die Gedächtnisspur vollständig und unwiderruflich.
-- [x] Spontanerholung beschreibt das Wiederauftreten der CR nach einer Ruhepause.
-- [ ] Reizgeneralisierung bedeutet, dass ausschließlich der identische Reiz wirkt.
+- [x] Spontanerholung beschreibt das Wiederauftreten der CR nach einer Pause.
+- [ ] Generalisierung bedeutet, dass nur der identische Reiz wirkt.
 - [x] Konditionierung höherer Ordnung baut auf einem konditionierten Reiz auf.
 
 > [!explanation]
 > Extinktion ist Hemmungslernen (Inhibition), keine Löschung. Generalisierung reagiert auch auf Reizähnlichkeiten.
 ```
 
-> [!TIP]
-> **Block-IDs sind optional – aber super nützlich:**
-> * Lässt du sie weg, berechnet das Plugin automatisch einen internen Hash. Alles funktioniert sofort ohne manuelles Eintippen!
-> * Mit einer Block-ID (`^q-thema-01`) bleibt deine Lernstatistik (Fehlerspeicher & FSRS) jedoch auch dann erhalten, wenn du die Frage später umformulierst.
-> * **Tipp für Faule:** Du musst sie nicht von Hand tippen! Nutze einfach per Rechtsklick in der Notiz **„⚡ Frage-Block-IDs automatisch ergänzen“** oder den Button in den Plugin-Einstellungen, um alle Fragen mit einem Klick automatisch nummerieren zu lassen.
-
----
-
-### 3. Freitextfragen mit Musterlösung & Kriterien
-Für offene Aufgaben, Definitionen oder Rechenwege:
+### 2. Klausur-Notiz (`type: exam`)
+Für realistische Prüfungen mit Zeitdruck und Bestehensgrenze:
 
 ```markdown
+---
+type: exam
+module: M1
+semester: WiSe26/27
+title: Probeklausur Grundlagen
+timeLimitMinutes: 90
+passingScore: 75%
+shuffleQuestions: true
+shuffleOptions: true
+---
+
 ## Erkläre das Modell der Kognitiven Dissonanz nach Festinger. ^q-diss-02
 type: freetext
 points: 3
 
 Musterloesung:
-Kognitive Dissonanz beschreibt einen aversiven motivationalen Spannungszustand, der entsteht, wenn widersprüchliche Kognitionen vorliegen.
+Kognitive Dissonanz beschreibt einen aversiven motivationalen Spannungszustand bei widersprüchlichen Kognitionen.
 
 Kriterien:
 1. Definition des aversiven Spannungszustands (1P)
@@ -131,51 +141,24 @@ Kriterien:
 3. Mindestens eine Reduktionsstrategie genannt (1P)
 
 > [!explanation]
-> Typische Reduktionsstrategien: Einstellungsänderung, Hinzufügen konsonanter Kognitionen oder Abwertung der Wichtigkeit.
-```
-
-In der Klausurauswertung kannst du deine getippte Antwort direkt mit der Musterlösung vergleichen und dir anhand der Kriterien selbst Punkte zuweisen (`0`, `0.5`, `1.0`, etc.).
-
----
-
-### 4. Single-Choice-Fragen (Genau 1 richtige Antwort)
-```markdown
-## Welches Organ ist primär für die Insulinproduktion verantwortlich? ^q-bio-03
-type: single-choice
-points: 1
-
-- [ ] Leber
-- [x] Bauchspeicheldrüse (Pankreas)
-- [ ] Milz
-- [ ] Niere
+> Typische Reduktionsstrategien: Einstellungsänderung oder Hinzufügen konsonanter Kognitionen.
 ```
 
 ---
 
-## ⚙️ Einstellungen & Anpassung
+## ⚙️ Einstellungen & Gamification anpassen
 
-Unter **Obsidian-Einstellungen > Community-Plugins > Exam and Quiz Hub** kannst du alles an deine Bedürfnisse anpassen:
-* **Klausuren-Ordner:** Standardmäßig `exams` (kann auf jeden beliebigen Ordner geändert werden).
-* **Standard-Bestehensgrenze:** Standardmäßig auf **75 %** voreingestellt.
-* **Audio & Gamification:** Schalte Klick- und Erfolgstöne oder die Konfetti-Animation bei bestandenen Prüfungen ein oder aus.
-* **Synchronisation:** Automatische Speicherung deines Lernfortschritts in `.quiz-learning-data.json`.
-
----
-
-## 🔄 Gerätesynchronisation (PC, Mac, iPhone, iPad & Android)
-
-Deine Lerndaten (Fehlerspeicher, Erfahrungs-Punkte, Level und Streaks) werden automatisch in einer synchronisierbaren Vault-Datei gespeichert. 
-* Funktioniert ohne zusätzliche Konfiguration mit **Obsidian Sync, iCloud, Git, Syncthing oder Remotely Save**.
-* Lerne morgens am Schreibtisch und wiederhole nachmittags in der Bahn auf dem Smartphone deine Fehlerfragen – dein Fortschritt bleibt immer aktuell.
+Unter **Obsidian-Einstellungen > Community-Plugins > Exam and Quiz Hub** hast du die volle Kontrolle:
+* **Audio & Gamification nach Wunsch steuern:** Schalte Tamagotchi, Level-/XP-Leiste, Konfetti-Feuerwerk oder Audio-Töne einzeln ein oder aus.
+* **Klausuren-Ordner:** Frei wählbar (Standard: `exams`).
+* **Standard-Bestehensgrenze:** Voreingestellt auf **75 %**.
+* **Geräte-Synchronisation:** Speichert Fehlerspeicher, XP und Tamagotchi-Status verlustfrei in `.quiz-learning-data.json` für **Obsidian Sync, iCloud, Git oder Syncthing**.
 
 ---
 
-## 📦 Manuelle Installation
+## 📦 Installation
 
-1. Lade die neuesten Dateien (`main.js`, `manifest.json`, `styles.css`) herunter.
-2. Öffne deinen Obsidian-Vault-Ordner und navigiere zu `.obsidian/plugins/`.
-3. Erstelle einen Unterordner namens `exam-quiz-hub` und lege die 3 Dateien dort ab.
-4. Starte Obsidian neu oder lade die Plugins unter **Einstellungen > Community-Plugins** neu.
-5. Aktiviere **Exam and Quiz Hub**.
+- **Empfohlen über BRAT:** Füge in den BRAT-Einstellungen das Repository `tobiasottost-cmd/obsidian-quiz-hub` hinzu.
+- **Manuell:** Kopiere `main.js`, `manifest.json` und `styles.css` in deinen Vault unter `.obsidian/plugins/exam-quiz-hub/` und aktiviere das Plugin in den Obsidian-Einstellungen.
 
-Viel Erfolg bei deiner Prüfungsvorbereitung! 🎓
+Viel Erfolg bei deinen Prüfungen und Quizzen! 🎓🐉

@@ -29,10 +29,10 @@ export class ExamSession {
             }
         };
 
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
             window.addEventListener('beforeunload', this.beforeUnloadHandler);
         }
-        if (typeof document !== 'undefined') {
+        if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
             document.addEventListener('visibilitychange', this.visibilityChangeHandler);
         }
 
@@ -89,8 +89,7 @@ export class ExamSession {
 
     private startTimer(): void {
         this.stopTimer();
-        const setTimer = typeof window !== 'undefined' ? window.setInterval : setInterval;
-        this.timerInterval = setTimer(() => {
+        this.timerInterval = window.setInterval(() => {
             if (this.state.remainingSeconds > 0) {
                 this.state.remainingSeconds -= 1;
                 for (const listener of this.tickListeners) {
@@ -107,11 +106,7 @@ export class ExamSession {
 
     private stopTimer(): void {
         if (this.timerInterval !== null) {
-            if (typeof window !== 'undefined') {
-                window.clearInterval(this.timerInterval);
-            } else {
-                clearInterval(this.timerInterval);
-            }
+            window.clearInterval(this.timerInterval);
             this.timerInterval = null;
         }
     }
@@ -119,19 +114,14 @@ export class ExamSession {
     private startAutoSaveTimer(): void {
         this.stopAutoSaveTimer();
         // 15 seconds auto-save requirement from specification v3
-        const setTimer = typeof window !== 'undefined' ? window.setInterval : setInterval;
-        this.autoSaveInterval = setTimer(() => {
+        this.autoSaveInterval = window.setInterval(() => {
             void this.triggerAutoSave();
         }, 15000) as unknown as number;
     }
 
     private stopAutoSaveTimer(): void {
         if (this.autoSaveInterval !== null) {
-            if (typeof window !== 'undefined') {
-                window.clearInterval(this.autoSaveInterval);
-            } else {
-                clearInterval(this.autoSaveInterval);
-            }
+            window.clearInterval(this.autoSaveInterval);
             this.autoSaveInterval = null;
         }
     }
@@ -286,10 +276,10 @@ export class ExamSession {
         this.stopTimer();
         this.stopAutoSaveTimer();
 
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && typeof window.removeEventListener === 'function') {
             window.removeEventListener('beforeunload', this.beforeUnloadHandler);
         }
-        if (typeof document !== 'undefined') {
+        if (typeof document !== 'undefined' && typeof document.removeEventListener === 'function') {
             document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
         }
 

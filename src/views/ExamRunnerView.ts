@@ -2,7 +2,7 @@ import { Component, ItemView, Modal, Platform, setIcon, WorkspaceLeaf } from 'ob
 import type ExamQuizHubPlugin from '../main';
 import { ExamSession } from '../session/ExamSession';
 import { MarkdownUtils } from '../parser/MarkdownUtils';
-import { QuestionDefinition, QuestionEvaluation } from '../types';
+import { QuestionDefinition } from '../types';
 import { ScoringEngine } from '../scoring/ScoringEngine';
 
 export const VIEW_TYPE_EXAM_RUNNER = 'exam-quiz-hub-runner';
