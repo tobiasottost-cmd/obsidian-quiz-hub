@@ -15,6 +15,15 @@ import { ExamGenerator } from './session/ExamGenerator';
 import { LearningSyncManager } from './sync/LearningSyncManager';
 import { BlockIdAutoAssigner } from './parser/BlockIdAutoAssigner';
 import { TamagotchiEngine } from './gamification/TamagotchiEngine';
+import { ExamEditorSuggest } from './editor/ExamEditorSuggest';
+import { CreateExamQuizModal } from './modals/CreateExamQuizModal';
+import {
+    generateExamFrontmatter,
+    generateFreetextSnippet,
+    generateMultipleChoiceSnippet,
+    generateQuizFrontmatter,
+    generateSingleChoiceSnippet
+} from './editor/SnippetTemplates';
 
 export default class ExamQuizHubPlugin extends Plugin {
     public settings: PluginSettingsData = DEFAULT_SETTINGS;
@@ -76,12 +85,68 @@ export default class ExamQuizHubPlugin extends Plugin {
             void this.openDashboard();
         });
 
+        // Register editor auto-complete suggestions (/mc, /sc, /freetext, /quiz, /exam)
+        this.registerEditorSuggest(new ExamEditorSuggest(this.app));
+
         // Commands
         this.addCommand({
             id: 'open-exam-hub-dashboard',
             name: 'Klausur-Dashboard öffnen',
             callback: () => {
                 void this.openDashboard();
+            }
+        });
+
+        this.addCommand({
+            id: 'create-exam-or-quiz-wizard',
+            name: '✨ Neues Quiz oder Klausur anlegen (Assistent)',
+            callback: () => {
+                new CreateExamQuizModal(this.app, this).open();
+            }
+        });
+
+        this.addCommand({
+            id: 'insert-mc-question-snippet',
+            name: '⚡ Multiple-Choice Frage einfügen (5 Aussagen)',
+            editorCallback: (editor) => {
+                editor.replaceSelection(generateMultipleChoiceSnippet());
+                new Notice('✅ Multiple-Choice Vorlage eingefügt!');
+            }
+        });
+
+        this.addCommand({
+            id: 'insert-sc-question-snippet',
+            name: '⚡ Single-Choice Frage einfügen (1 aus 4)',
+            editorCallback: (editor) => {
+                editor.replaceSelection(generateSingleChoiceSnippet());
+                new Notice('✅ Single-Choice Vorlage eingefügt!');
+            }
+        });
+
+        this.addCommand({
+            id: 'insert-freetext-question-snippet',
+            name: '⚡ Freitext-Aufgabe einfügen (mit Kriterien)',
+            editorCallback: (editor) => {
+                editor.replaceSelection(generateFreetextSnippet());
+                new Notice('✅ Freitext-Vorlage eingefügt!');
+            }
+        });
+
+        this.addCommand({
+            id: 'insert-quiz-frontmatter-snippet',
+            name: '⚡ Quiz-Kopfzeile (Frontmatter) einfügen',
+            editorCallback: (editor) => {
+                editor.replaceSelection(generateQuizFrontmatter('Modul', 'Neues Quiz'));
+                new Notice('✅ Quiz-Frontmatter eingefügt!');
+            }
+        });
+
+        this.addCommand({
+            id: 'insert-exam-frontmatter-snippet',
+            name: '⚡ Klausur-Kopfzeile (Frontmatter) einfügen',
+            editorCallback: (editor) => {
+                editor.replaceSelection(generateExamFrontmatter('Modul', 'Neue Klausur', 90, 75));
+                new Notice('✅ Klausur-Frontmatter eingefügt!');
             }
         });
 
@@ -164,6 +229,33 @@ export default class ExamQuizHubPlugin extends Plugin {
         // Context menu in editor: right click inside any note
         this.registerEvent(
             this.app.workspace.on('editor-menu', (menu, editor) => {
+                menu.addItem((item) => {
+                    item.setTitle('⚡ Multiple-Choice Frage einfügen')
+                        .setIcon('check-square')
+                        .onClick(() => {
+                            editor.replaceSelection(generateMultipleChoiceSnippet());
+                            new Notice('✅ Multiple-Choice Vorlage eingefügt!');
+                        });
+                });
+
+                menu.addItem((item) => {
+                    item.setTitle('⚡ Single-Choice Frage einfügen')
+                        .setIcon('disc')
+                        .onClick(() => {
+                            editor.replaceSelection(generateSingleChoiceSnippet());
+                            new Notice('✅ Single-Choice Vorlage eingefügt!');
+                        });
+                });
+
+                menu.addItem((item) => {
+                    item.setTitle('⚡ Freitext-Aufgabe einfügen')
+                        .setIcon('file-text')
+                        .onClick(() => {
+                            editor.replaceSelection(generateFreetextSnippet());
+                            new Notice('✅ Freitext-Vorlage eingefügt!');
+                        });
+                });
+
                 menu.addItem((item) => {
                     item.setTitle('⚡ Frage-Block-IDs automatisch ergänzen')
                         .setIcon('hash')

@@ -133,12 +133,24 @@ export class ScoringEngine {
         const selectedId = selectedIds[0];
         const isCorrect = correctOpt !== undefined && selectedId === correctOpt.id;
 
+        const itemDetails = options.map(opt => {
+            const userSelected = selectedId === opt.id;
+            const isOptCorrect = Boolean(opt.isCorrect);
+            return {
+                text: opt.text,
+                userSelected,
+                isCorrect: isOptCorrect,
+                earnedPoint: userSelected && isOptCorrect
+            };
+        });
+
         return {
             questionId: question.id,
             type: 'single-choice',
             possiblePoints: 1,
             earnedPoints: isCorrect ? 1 : 0,
-            isFullyCorrect: isCorrect
+            isFullyCorrect: isCorrect,
+            itemDetails
         };
     }
 

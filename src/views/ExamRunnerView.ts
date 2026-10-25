@@ -545,18 +545,33 @@ export class ExamRunnerView extends ItemView {
                     itemDetail = evalRec.itemDetails[idx];
                     cardExtraCls = 'is-locked ';
 
-                    if (itemDetail.userSelected && itemDetail.isCorrect) {
-                        cardExtraCls += 'is-revealed-correct';
-                        statusBadgeText = '+1 Pkt. • Zutreffend';
-                    } else if (itemDetail.userSelected && !itemDetail.isCorrect) {
-                        cardExtraCls += 'is-revealed-wrong';
-                        statusBadgeText = '0 Pkt. • Falsch gewählt';
-                    } else if (!itemDetail.userSelected && itemDetail.isCorrect) {
-                        cardExtraCls += 'is-revealed-missed';
-                        statusBadgeText = '0 Pkt. • Gefehlt (Wäre zutreffend)';
+                    if (isSingle) {
+                        if (itemDetail.userSelected && itemDetail.isCorrect) {
+                            cardExtraCls += 'is-revealed-correct';
+                            statusBadgeText = '+1 Pkt. • Richtige Antwort';
+                        } else if (itemDetail.userSelected && !itemDetail.isCorrect) {
+                            cardExtraCls += 'is-revealed-wrong';
+                            statusBadgeText = '0 Pkt. • Falsch gewählt';
+                        } else if (!itemDetail.userSelected && itemDetail.isCorrect) {
+                            cardExtraCls += 'is-revealed-missed';
+                            statusBadgeText = '0 Pkt. • Richtige Lösung';
+                        } else {
+                            cardExtraCls += 'is-revealed-neutral';
+                        }
                     } else {
-                        cardExtraCls += 'is-revealed-neutral';
-                        statusBadgeText = '+1 Pkt. • Richtig nicht gewählt';
+                        if (itemDetail.userSelected && itemDetail.isCorrect) {
+                            cardExtraCls += 'is-revealed-correct';
+                            statusBadgeText = '+1 Pkt. • Zutreffend';
+                        } else if (itemDetail.userSelected && !itemDetail.isCorrect) {
+                            cardExtraCls += 'is-revealed-wrong';
+                            statusBadgeText = '0 Pkt. • Falsch gewählt';
+                        } else if (!itemDetail.userSelected && itemDetail.isCorrect) {
+                            cardExtraCls += 'is-revealed-missed';
+                            statusBadgeText = '0 Pkt. • Gefehlt (Wäre zutreffend)';
+                        } else {
+                            cardExtraCls += 'is-revealed-neutral';
+                            statusBadgeText = '+1 Pkt. • Richtig nicht gewählt';
+                        }
                     }
                 } else if (isSelected) {
                     cardExtraCls = 'is-selected';
@@ -585,10 +600,13 @@ export class ExamRunnerView extends ItemView {
                 }
 
                 card.createSpan({ cls: 'choice-letter-label', text: `${letter}.` });
-                card.createDiv({ cls: 'choice-text', text: opt.text });
+
+                const contentCol = card.createDiv({ cls: 'choice-content-col' });
+                contentCol.createDiv({ cls: 'choice-text', text: opt.text });
 
                 if (statusBadgeText) {
-                    card.createSpan({ cls: 'quiz-item-status-tag', text: statusBadgeText });
+                    const badgeWrap = contentCol.createDiv({ cls: 'quiz-item-status-wrap' });
+                    badgeWrap.createSpan({ cls: 'quiz-item-status-tag', text: statusBadgeText });
                 }
 
                 // Only allow clicking if NOT revealed in quiz mode
@@ -613,7 +631,7 @@ export class ExamRunnerView extends ItemView {
                 const checkBar = container.createDiv({ cls: 'quiz-check-action-bar' });
                 const checkBtn = checkBar.createEl('button', {
                     cls: 'mod-cta quiz-check-btn',
-                    text: '⚡ Antwort prüfen (Enter)'
+                    text: Platform.isMobile ? '⚡ Antwort prüfen' : '⚡ Antwort prüfen (Enter)'
                 });
                 checkBtn.addEventListener('click', () => {
                     this.checkCurrentQuestion();
@@ -636,7 +654,7 @@ export class ExamRunnerView extends ItemView {
                 if (currentIdx < this.session.getTotalQuestions() - 1) {
                     const nextBtn = scoreBanner.createEl('button', {
                         cls: 'mod-cta quiz-advance-btn',
-                        text: 'Nächste Frage (J) →'
+                        text: Platform.isMobile ? 'Nächste Frage →' : 'Nächste Frage (J) →'
                     });
                     nextBtn.addEventListener('click', () => {
                         this.session?.nextQuestion();

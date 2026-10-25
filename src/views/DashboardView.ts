@@ -5,6 +5,7 @@ import { ExamGenerator } from '../session/ExamGenerator';
 import { ParsedExamFile } from '../parser/ExamParser';
 import { TAMAGOTCHI_STAGES } from '../gamification/TamagotchiAssets';
 import { TamagotchiEngine } from '../gamification/TamagotchiEngine';
+import { CreateExamQuizModal } from '../modals/CreateExamQuizModal';
 
 export const VIEW_TYPE_DASHBOARD = 'exam-quiz-hub-dashboard';
 
@@ -65,9 +66,19 @@ export class DashboardView extends ItemView {
     private renderHeader(container: HTMLElement): void {
         const header = container.createDiv({ cls: 'exam-hub-dashboard-header' });
         const titleRow = header.createDiv({ cls: 'exam-hub-title-row' });
-        const iconSpan = titleRow.createSpan({ cls: 'exam-hub-title-icon' });
+        const leftGroup = titleRow.createDiv({ cls: 'exam-hub-header-left' });
+        const iconSpan = leftGroup.createSpan({ cls: 'exam-hub-title-icon' });
         setIcon(iconSpan, 'graduation-cap');
-        titleRow.createEl('h1', { text: 'Exam and Quiz Hub' });
+        leftGroup.createEl('h1', { text: 'Exam and Quiz Hub' });
+
+        const headerActions = titleRow.createDiv({ cls: 'exam-hub-header-actions' });
+        const createBtn = headerActions.createEl('button', {
+            cls: 'mod-cta exam-hub-create-btn',
+            text: '✨ Neues Quiz / Klausur erstellen'
+        });
+        createBtn.addEventListener('click', () => {
+            new CreateExamQuizModal(this.app, this.plugin).open();
+        });
     }
 
     private renderGamificationBar(container: HTMLElement): void {
@@ -326,16 +337,33 @@ export class DashboardView extends ItemView {
 
     private renderExamsCatalog(container: HTMLElement): void {
         const catalog = container.createDiv({ cls: 'exam-hub-card catalog-card' });
-        const titleRow = catalog.createDiv({ cls: 'card-title-row' });
-        const icon = titleRow.createSpan({ cls: 'card-title-icon' });
+        const titleRow = catalog.createDiv({ cls: 'card-title-row catalog-header-row' });
+        const leftCol = titleRow.createDiv({ cls: 'catalog-header-left' });
+        const icon = leftCol.createSpan({ cls: 'card-title-icon' });
         setIcon(icon, 'folder');
-        titleRow.createEl('h3', { text: 'Klausuren & Quiz-Pools' });
+        leftCol.createEl('h3', { text: 'Klausuren & Quiz-Pools' });
+
+        const quickAddBtn = titleRow.createEl('button', {
+            cls: 'catalog-quick-add-btn',
+            text: '+ Neues Quiz / Klausur'
+        });
+        quickAddBtn.addEventListener('click', () => {
+            new CreateExamQuizModal(this.app, this.plugin, this.activeCatalogFilter === 'quiz' ? 'quiz' : 'exam').open();
+        });
 
         const allExams = this.plugin.indexer.getAllExamFiles();
         if (allExams.length === 0) {
-            catalog.createEl('p', {
-                cls: 'text-muted',
-                text: 'Keine Klausur- oder Quiz-Dateien gefunden.'
+            const emptyBox = catalog.createDiv({ cls: 'exam-hub-empty-state-card' });
+            emptyBox.createEl('p', {
+                cls: 'empty-desc',
+                text: 'Noch keine Klausur- oder Quiz-Dateien in deinem Klausuren-Ordner vorhanden.'
+            });
+            const onboardingBtn = emptyBox.createEl('button', {
+                cls: 'mod-cta',
+                text: '✨ Jetzt erstes Quiz oder Klausur anlegen'
+            });
+            onboardingBtn.addEventListener('click', () => {
+                new CreateExamQuizModal(this.app, this.plugin).open();
             });
             return;
         }

@@ -26,23 +26,24 @@ shuffleOptions: true
 - Trenne Aufgaben jeweils mit drei Bindestrichen '---'.
 
 3. Multiple-Choice Aufgaben (Universitärer 5-Aussagen-Standard):
-- type: multiple-choice
-- points: 5
-- Exakt 5 binäre Aussagen als Checkboxen:
+WICHTIG: Die Zeilen 'type:' und 'points:' dürfen KEINEN führenden Spiegelstrich ('-') haben!
+type: multiple-choice
+points: 5
+Exakt 5 binäre Aussagen als Checkboxen:
   - [x] für wahre/zutreffende Aussagen
   - [ ] für falsche/unzutreffende Aussagen
-- Erklärungs-Callout direkt darunter:
+Erklärungs-Callout direkt darunter:
   > [!explanation]
   > Ausführliche Erklärung zur Musterlösung und zu den einzelnen Aussagen.
 
 4. Freitext-Aufgaben:
-- type: freetext
-- points: [Maximalpunkte, z.B. 3]
-- Musterloesung: [Vollständige Musterantwort]
-- Kriterien:
+type: freetext
+points: [Maximalpunkte, z.B. 3]
+Musterloesung: [Vollständige Musterantwort]
+Kriterien:
   1. [Kriterium 1] (1P)
   2. [Kriterium 2] (1P)
-- Erklärungs-Callout:
+Erklärungs-Callout:
   > [!explanation]
   > Didaktische Hinweise zur Punktevergabe.
 
@@ -110,23 +111,25 @@ shuffleOptions: true
 - Trenne Aufgaben jeweils mit drei Bindestrichen '---'.
 
 3. Multiple-Choice Aufgaben (Universitärer 5-Aussagen-Standard oder Single-Choice):
-- type: multiple-choice (oder single-choice)
-- points: 5 (bzw. 1 bei Single-Choice)
-- Aussagen als Checkboxen:
+WICHTIG: Die Zeilen 'type:' und 'points:' dürfen KEINEN führenden Spiegelstrich ('-') haben!
+type: multiple-choice
+points: 5
+(Hinweis: Bei Single-Choice mit genau 1 richtiger Option schreibe 'type: single-choice' und 'points: 1')
+Aussagen als Checkboxen:
   - [x] für wahre/zutreffende Aussagen
   - [ ] für falsche/unzutreffende Aussagen
-- Erklärungs-Callout direkt darunter (wird im Quiz sofort nach der Beantwortung eingeblendet):
+Erklärungs-Callout direkt darunter (wird im Quiz sofort nach der Beantwortung eingeblendet):
   > [!explanation]
   > Ausführliche didaktische Erklärung zur Musterlösung.
 
 4. Freitext-Aufgaben:
-- type: freetext
-- points: [Maximalpunkte, z.B. 3]
-- Musterloesung: [Vollständige Musterantwort]
-- Kriterien:
+type: freetext
+points: [Maximalpunkte, z.B. 3]
+Musterloesung: [Vollständige Musterantwort]
+Kriterien:
   1. [Kriterium 1] (1P)
   2. [Kriterium 2] (1P)
-- Erklärungs-Callout:
+Erklärungs-Callout:
   > [!explanation]
   > Didaktische Hinweise zur Punktevergabe.
 

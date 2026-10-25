@@ -542,6 +542,126 @@ void destroyGuardedSession.triggerAutoSave().then(() => {
     console.log('✅ ExamSession suppresses auto-save after destroy()');
 });
 
+// 9. Tolerant metadata syntax parsing (-type: multiple-choice, -points: 5, etc.)
+console.log('\n--- Testing Tolerant Metadata Parsing ---');
+const tolerantSample = `---
+-type: quiz
+title: Test Tolerant Quiz
+---
+
+## Frage 1 mit Minus-Type? ^q-tol-01
+-type: multiple-choice
+-points: 5
+
+- [x] Aussage A
+- [ ] Aussage B
+- [ ] Aussage C
+- [ ] Aussage D
+- [ ] Aussage E
+
+> [!explanation]
+> Erklaerung 1
+
+---
+
+## Frage 2 mit Stern-Type? ^q-tol-02
+* type: single-choice
+* points: 1
+
+- [ ] Option A
+- [x] Option B
+- [ ] Option C
+
+---
+
+## Frage 3 mit Parenthesen-Type? ^q-tol-03
+type: multiple-choice (oder single-choice)
+points: 5 (bzw. 1 bei Single-Choice)
+
+- [x] Aussage A
+- [ ] Aussage B
+- [ ] Aussage C
+`;
+
+const parsedTolerant = ExamParser.parse(tolerantSample, 'exams/tolerant.md');
+assert(parsedTolerant.frontmatter.type === 'quiz', 'Frontmatter -type: quiz parsed as quiz');
+assert(parsedTolerant.questions.length === 3, 'Parsed 3 tolerant questions');
+assert(parsedTolerant.questions[0].type === 'multiple-choice', 'Question with "-type: multiple-choice" parsed as multiple-choice despite only 1 [x]');
+assert(parsedTolerant.questions[0].points === 5, 'Question with "-points: 5" parsed as 5 points');
+assert(parsedTolerant.questions[1].type === 'single-choice', 'Question with "* type: single-choice" parsed as single-choice');
+assert(parsedTolerant.questions[1].points === 1, 'Question with "* points: 1" parsed as 1 point');
+assert(parsedTolerant.questions[2].type === 'multiple-choice', 'Question with "type: multiple-choice (oder single-choice)" parsed as multiple-choice');
+assert(parsedTolerant.questions[2].points === 5, 'Question with "points: 5 (...)" parsed as 5 points');
+console.log('✅ Tolerant metadata parsing (-type, * type, -points) verified');
+
+// Test single choice evaluation itemDetails
+const scEvaluation = ScoringEngine.evaluateQuestion(parsedTolerant.questions[1], {
+    sessionId: 'test-session',
+    examTitle: 'Test',
+    module: 'M1',
+    mode: 'quiz',
+    isGeneratedExam: false,
+    questions: [parsedTolerant.questions[1]],
+    currentIndex: 0,
+    startTime: Date.now(),
+    timeLimitSeconds: 0,
+    remainingSeconds: 0,
+    userAnswers: {
+        'q-tol-02': {
+            questionId: 'q-tol-02',
+            selectedOptionIds: [parsedTolerant.questions[1].options![1].id],
+            isFlagged: false
+        }
+    },
+    isFinished: false
+});
+assert(scEvaluation.earnedPoints === 1, 'Single-choice correct selection earned 1 point');
+assert(scEvaluation.isFullyCorrect === true, 'Single-choice isFullyCorrect true');
+assert(Array.isArray(scEvaluation.itemDetails) && scEvaluation.itemDetails.length === 3, 'Single-choice evaluation provides itemDetails');
+assert(scEvaluation.itemDetails![1].userSelected === true && scEvaluation.itemDetails![1].isCorrect === true, 'Single-choice item detail matches chosen correct option');
+console.log('✅ Single-choice evaluation itemDetails verified');
+
+// 10. Test SnippetTemplates and generated notes
+console.log('\n--- Testing Snippet Templates & Wizard Note Generation ---');
+const {
+    generateMultipleChoiceSnippet,
+    generateSingleChoiceSnippet,
+    generateFreetextSnippet,
+    generateSampleQuizNote,
+    generateSampleExamNote
+} = require('../src/editor/SnippetTemplates');
+
+const mcSnippet = generateMultipleChoiceSnippet('q-test-mc');
+assert(mcSnippet.includes('## [Fragetext'), 'MC snippet contains prompt heading');
+assert(mcSnippet.includes('^q-test-mc'), 'MC snippet contains custom block ID');
+assert(mcSnippet.includes('type: multiple-choice'), 'MC snippet contains type');
+
+const scSnippet = generateSingleChoiceSnippet('q-test-sc');
+assert(scSnippet.includes('type: single-choice'), 'SC snippet contains single-choice type');
+assert(scSnippet.includes('^q-test-sc'), 'SC snippet contains block ID');
+
+const freetextSnippet = generateFreetextSnippet('q-test-free');
+assert(freetextSnippet.includes('type: freetext'), 'Freetext snippet contains freetext type');
+assert(freetextSnippet.includes('Musterloesung:'), 'Freetext snippet contains model answer header');
+
+const sampleQuiz = generateSampleQuizNote('Biologie', 'Zellteilung');
+const parsedSampleQuiz = ExamParser.parse(sampleQuiz, 'exams/sample-quiz.md');
+assert(parsedSampleQuiz.frontmatter.type === 'quiz', 'Generated quiz has type: quiz');
+assert(parsedSampleQuiz.frontmatter.module === 'Biologie', 'Generated quiz has module Biologie');
+assert(parsedSampleQuiz.questions.length === 2, 'Generated quiz has 2 questions');
+assert(parsedSampleQuiz.questions[0].type === 'multiple-choice', 'First quiz question is multiple-choice');
+assert(parsedSampleQuiz.questions[1].type === 'single-choice', 'Second quiz question is single-choice');
+
+const sampleExam = generateSampleExamNote('M1', 'Klausur Psychologie', 60, 80);
+const parsedSampleExam = ExamParser.parse(sampleExam, 'exams/sample-exam.md');
+assert(parsedSampleExam.frontmatter.type === 'exam', 'Generated exam has type: exam');
+assert(parsedSampleExam.frontmatter.timeLimitMinutes === 60, 'Generated exam time limit is 60');
+assert(parsedSampleExam.frontmatter.passingScore === '80%', 'Generated exam passing score is 80%');
+assert(parsedSampleExam.questions.length === 2, 'Generated exam has 2 questions');
+assert(parsedSampleExam.questions[0].type === 'multiple-choice', 'First exam question is multiple-choice');
+assert(parsedSampleExam.questions[1].type === 'freetext', 'Second exam question is freetext');
+console.log('✅ Snippet templates & generated sample notes parse cleanly');
+
 console.log('\n🎉 ALL CORE LOGIC AND SPECIFICATION UNIT TESTS PASSED!');
 
 

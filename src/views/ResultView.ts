@@ -224,8 +224,8 @@ export class ResultView extends ItemView {
             const promptDiv = body.createDiv({ cls: 'review-prompt-md' });
             await MarkdownUtils.render(this.app, q.prompt, promptDiv, q.sourceFilePath, this.renderComponent);
 
-            // Review for Multiple Choice
-            if (q.type === 'multiple-choice' && evalRec?.itemDetails) {
+            // Review for Multiple Choice & Single Choice
+            if ((q.type === 'multiple-choice' || q.type === 'single-choice') && evalRec?.itemDetails) {
                 const mcReview = body.createDiv({ cls: 'review-mc-list' });
                 for (const item of evalRec.itemDetails) {
                     const itemRow = mcReview.createDiv({

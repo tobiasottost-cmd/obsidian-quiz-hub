@@ -103,10 +103,10 @@ export class ExamParser {
                 value = value.substring(1, value.length - 1);
             }
 
-            const lowerKey = key.toLowerCase().replace(/[-_]/g, '');
+            const lowerKey = key.toLowerCase().replace(/^[-*+]\s*/, '').replace(/[-_]/g, '');
             switch (lowerKey) {
                 case 'type':
-                    result.type = value === 'quiz' ? 'quiz' : 'exam';
+                    result.type = value.toLowerCase().includes('quiz') ? 'quiz' : 'exam';
                     break;
                 case 'module':
                 case 'modul':
@@ -241,23 +241,32 @@ export class ExamParser {
                 inExplanationCallout = false;
             }
 
-            // Check metadata lines: type, points, id
-            const typeMatch = trimmed.match(/^type:\s*([a-zA-Z0-9_-]+)$/i);
+            // Check metadata lines: type, points, id (tolerant of leading -, *, + and spaces)
+            const typeMatch = trimmed.match(/^[-*+]?\s*type:\s*([a-zA-Z0-9_-]+)/i);
             if (typeMatch) {
-                const t = typeMatch[1].toLowerCase();
-                if (t === 'multiple-choice' || t === 'single-choice' || t === 'freetext' || t === 'cloze') {
-                    explicitType = t;
+                const rawT = typeMatch[1].toLowerCase().replace(/_/g, '-');
+                if (rawT === 'multiple-choice' || rawT === 'multiplechoice' || rawT === 'mc') {
+                    explicitType = 'multiple-choice';
+                    continue;
+                } else if (rawT === 'single-choice' || rawT === 'singlechoice' || rawT === 'sc') {
+                    explicitType = 'single-choice';
+                    continue;
+                } else if (rawT === 'freetext' || rawT === 'freitext' || rawT === 'text') {
+                    explicitType = 'freetext';
+                    continue;
+                } else if (rawT === 'cloze' || rawT === 'lueckentext' || rawT === 'lückentext') {
+                    explicitType = 'cloze';
                     continue;
                 }
             }
 
-            const pointsMatch = trimmed.match(/^points:\s*([0-9]+(?:\.[0-9]+)?)$/i);
+            const pointsMatch = trimmed.match(/^[-*+]?\s*(?:points|punkte):\s*([0-9]+(?:\.[0-9]+)?)/i);
             if (pointsMatch) {
                 explicitPoints = parseFloat(pointsMatch[1]);
                 continue;
             }
 
-            const idMatch = trimmed.match(/^id:\s*([a-zA-Z0-9_-]+)$/i);
+            const idMatch = trimmed.match(/^[-*+]?\s*id:\s*([a-zA-Z0-9_-]+)/i);
             if (idMatch) {
                 explicitId = idMatch[1];
                 continue;
