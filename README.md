@@ -146,13 +146,24 @@ Kriterien:
 
 ---
 
-## ⚙️ Einstellungen & Gamification anpassen
+## ⚙️ Einstellungen & Anpassung
 
 Unter **Obsidian-Einstellungen > Community-Plugins > Exam and Quiz Hub** hast du die volle Kontrolle:
 * **Audio & Gamification nach Wunsch steuern:** Schalte Tamagotchi, Level-/XP-Leiste, Konfetti-Feuerwerk oder Audio-Töne einzeln ein oder aus.
 * **Klausuren-Ordner:** Frei wählbar (Standard: `exams`).
 * **Standard-Bestehensgrenze:** Voreingestellt auf **75 %**.
-* **Geräte-Synchronisation:** Speichert Fehlerspeicher, XP und Tamagotchi-Status verlustfrei in `.quiz-learning-data.json` für **Obsidian Sync, iCloud, Git oder Syncthing**.
+* **Geräte-Synchronisation:** Verwendet `exams/progress.md` für verlustfreien automatischen Abgleich über **Obsidian Sync, iCloud, Git oder Syncthing**.
+
+---
+
+## 🔄 Geräte-Synchronisation & `exams/progress.md`
+
+Damit dein Lernfortschritt nahtlos zwischen Desktop, Laptop, Tablet und Smartphone synchronisiert wird, nutzt Exam and Quiz Hub eine Markdown-basierte Synchronisationsdatei:
+
+* **Speicherort:** Standardmäßig `exams/progress.md` (Name und Ordner können in den Einstellungen angepasst werden).
+* **Was wird synchronisiert?** Dein persönlicher **Fehlerspeicher**, **XP & Level**, **Lern-Streak**, **FSRS-Gedächtnisdaten** sowie der Zustand deines **Tamagotchi-Drachen**.
+* **100 % zuverlässig mit Obsidian Sync:** Da es sich um eine reguläre Markdown-Notiz (`.md`) handelt, überträgt Obsidian Sync (sowie iCloud, Git oder Syncthing) deinen Lernfortschritt automatisch, sofort und ohne manuelle Konfiguration auf alle mobilen und Desktop-Geräte.
+* ⚠️ **Wichtiger Hinweis:** Die Datei `exams/progress.md` ist für das Auslesen, Speichern und Synchronisieren deines Fortschritts zwingend erforderlich. **Bitte verändere oder lösche die Datei und insbesondere den darin eingebetteten JSON-Codeblock nicht manuell**, um Beschädigungen der Lerndaten oder Konflikte beim Zusammenführen zu vermeiden.
 
 ---
 
@@ -162,3 +173,4 @@ Unter **Obsidian-Einstellungen > Community-Plugins > Exam and Quiz Hub** hast du
 - **Manuell:** Kopiere `main.js`, `manifest.json` und `styles.css` in deinen Vault unter `.obsidian/plugins/exam-quiz-hub/` und aktiviere das Plugin in den Obsidian-Einstellungen.
 
 Viel Erfolg bei deinen Prüfungen und Quizzen! 🎓🐉
+
