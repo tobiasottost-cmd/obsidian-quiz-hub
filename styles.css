@@ -1327,6 +1327,60 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     padding-right: calc(14px + max(var(--safe-area-inset-right, 0px), env(safe-area-inset-right, 0px)));
 }
 
+.is-mobile .exam-hub-dashboard-container .exam-hub-card,
+.is-phone .exam-hub-dashboard-container .exam-hub-card {
+    padding: 14px 12px;
+    margin-bottom: 12px;
+}
+
+.is-mobile .generator-mode-toggle-group,
+.is-phone .generator-mode-toggle-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+}
+
+.is-mobile .mode-toggle-btn,
+.is-phone .mode-toggle-btn {
+    width: 100%;
+    text-align: left;
+}
+
+.is-mobile .error-pool-actions-row,
+.is-phone .error-pool-actions-row {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+}
+
+.is-mobile .error-pool-actions-row button,
+.is-phone .error-pool-actions-row button {
+    width: 100%;
+    white-space: normal;
+    text-align: center;
+    justify-content: center;
+}
+
+.is-mobile .exam-hub-resume-banner,
+.is-phone .exam-hub-resume-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px 12px;
+}
+
+.is-mobile .exam-hub-resume-banner .resume-actions,
+.is-phone .exam-hub-resume-banner .resume-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+}
+
+.is-mobile .exam-hub-resume-banner .resume-actions button,
+.is-phone .exam-hub-resume-banner .resume-actions button {
+    width: 100%;
+}
+
 .is-mobile .exam-result-container,
 .is-phone .exam-result-container {
     padding-top: calc(16px + max(var(--safe-area-inset-top, 0px), env(safe-area-inset-top, 0px)));
@@ -1597,9 +1651,55 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
         font-size: 1.4rem;
     }
 
+    .exam-hub-dashboard-container .exam-hub-card {
+        padding: 14px 12px;
+        margin-bottom: 12px;
+    }
+
     .exam-hub-stats-bar {
         grid-template-columns: 1fr;
         gap: 10px;
+    }
+
+    .generator-mode-toggle-group {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .mode-toggle-btn {
+        width: 100%;
+        text-align: left;
+    }
+
+    .error-pool-actions-row {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .error-pool-actions-row button {
+        width: 100%;
+        white-space: normal;
+        text-align: center;
+        justify-content: center;
+    }
+
+    .exam-hub-resume-banner {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 14px 12px;
+    }
+
+    .exam-hub-resume-banner .resume-actions {
+        flex-direction: column;
+        width: 100%;
+        gap: 8px;
+    }
+
+    .exam-hub-resume-banner .resume-actions button {
+        width: 100%;
     }
 
     .module-exams-grid {
@@ -1670,6 +1770,7 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
+    width: 100%;
 }
 
 .mode-toggle-btn {
@@ -1683,6 +1784,14 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     font-weight: 600;
     cursor: pointer;
     transition: all 0.15s ease;
+    white-space: normal;
+    word-break: break-word;
+    box-sizing: border-box;
+    max-width: 100%;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
 }
 
 .mode-toggle-btn:hover {
@@ -2210,17 +2319,23 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
 .tamagotchi-metric-row .metric-label-row {
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
     font-size: 0.85rem;
+    flex-wrap: wrap;
+    gap: 4px;
 }
 
 .tamagotchi-metric-row .metric-title {
     font-weight: 600;
     color: var(--text-normal);
+    word-break: break-word;
 }
 
 .tamagotchi-metric-row .metric-value {
     font-weight: 600;
     color: var(--text-muted);
+    word-break: break-word;
+    text-align: right;
 }
 
 .tamagotchi-satiety-fill {
@@ -2241,11 +2356,12 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     gap: 12px;
     margin-top: 4px;
     flex-wrap: wrap;
+    width: 100%;
 }
 
 .tamagotchi-action-btn {
     min-height: 44px;
-    padding: 8px 16px;
+    padding: 10px 16px;
     border-radius: var(--radius-s, 6px);
     font-size: 0.9rem;
     font-weight: 600;
@@ -2257,6 +2373,11 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     background-color: var(--background-primary);
     color: var(--text-normal);
     transition: all 0.15s ease;
+    white-space: normal;
+    word-break: break-word;
+    box-sizing: border-box;
+    max-width: 100%;
+    text-align: center;
 }
 
 .tamagotchi-action-btn:hover {
@@ -2274,21 +2395,63 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     opacity: 0.92;
 }
 
-@media (max-width: 600px) {
+/* Mobile & Tablet Responsiveness for Tamagotchi */
+.is-mobile .tamagotchi-body,
+.is-phone .tamagotchi-body,
+@media (max-width: 768px) {
     .tamagotchi-body {
         flex-direction: column;
         align-items: center;
         text-align: center;
+        gap: 14px;
+        width: 100%;
+    }
+
+    .tamagotchi-avatar-col {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .tamagotchi-img-wrapper {
+        width: 110px;
+        height: 110px;
+    }
+
+    .tamagotchi-avatar-img {
+        max-width: 95px;
+        max-height: 95px;
+    }
+
+    .tamagotchi-info-col {
+        width: 100%;
+        min-width: 0;
+        text-align: left;
+    }
+
+    .tamagotchi-metric-row .metric-label-row {
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: baseline;
+    }
+
+    .tamagotchi-metric-row .metric-title,
+    .tamagotchi-metric-row .metric-value {
+        font-size: 0.82rem;
+        word-break: break-word;
     }
 
     .tamagotchi-actions-row {
         width: 100%;
-        justify-content: center;
+        flex-direction: column;
+        gap: 8px;
     }
 
     .tamagotchi-action-btn {
-        flex: 1;
-        min-width: 140px;
+        width: 100%;
+        flex: none;
+        min-width: 0;
+        text-align: center;
+        justify-content: center;
     }
 }
 
