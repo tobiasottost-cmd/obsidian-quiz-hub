@@ -169,6 +169,6 @@ export const DEFAULT_SETTINGS: PluginSettingsData = {
     resolvedPool: {},
     fsrsData: {},
     syncLearningDataInVault: true,
-    learningDataFileName: '.quiz-learning-data.json'
+    learningDataFileName: 'progress.md'
 };
 

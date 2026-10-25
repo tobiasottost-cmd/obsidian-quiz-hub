@@ -799,7 +799,7 @@ export class SettingsTab extends PluginSettingTab {
 
         new Setting(containerEl)
             .setName('Lerndaten im Vault synchronisieren')
-            .setDesc('Speichert Fehlerspeicher, XP und Lernfortschritt in einer synchronisierbaren Vault-Datei (.quiz-learning-data.json) für automatischen Abgleich über Obsidian Sync, iCloud oder Git.')
+            .setDesc('Speichert Fehlerspeicher, XP und Lernfortschritt in einer synchronisierbaren Markdown-Datei (z. B. exams/progress.md) für 100% zuverlässigen Abgleich über Obsidian Sync, iCloud oder Git.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.syncLearningDataInVault)
                 .onChange(async (value) => {
@@ -808,6 +808,18 @@ export class SettingsTab extends PluginSettingTab {
                     if (value) {
                         await this.plugin.learningSyncManager.saveLearningData();
                     }
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Name der Sync-Fortschrittsdatei')
+            .setDesc('Name der Markdown-Datei im Klausurenordner (Standard: progress.md). Markdown-Dateien (.md) werden von Obsidian Sync garantiert und automatisch synchronisiert.')
+            .addText(text => text
+                .setPlaceholder('progress.md')
+                .setValue(this.plugin.settings.learningDataFileName || 'progress.md')
+                .onChange(async (value) => {
+                    this.plugin.settings.learningDataFileName = value.trim() || 'progress.md';
+                    await this.plugin.saveSettings();
                 })
             );
 

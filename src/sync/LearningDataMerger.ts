@@ -141,5 +141,85 @@ export class LearningDataMerger {
 
         return { changed, merged: updated };
     }
+
+    /**
+     * Formats learning progress into a clean, human-readable Obsidian Markdown file
+     * with frontmatter, an overview dashboard, and an embedded machine-readable JSON code block.
+     */
+    public static formatProgressMarkdown(payload: SyncLearningData): string {
+        const errorCount = Object.keys(payload.errorPool || {}).length;
+        const resolvedCount = Object.keys(payload.resolvedPool || {}).length;
+        const jsonContent = JSON.stringify(payload, null, 2);
+
+        return `---
+quiz-hub-sync: true
+lastSyncTimestamp: ${payload.lastSyncTimestamp}
+userXP: ${payload.userXP}
+userLevel: ${payload.userLevel}
+streakDays: ${payload.streakDays}
+errorCount: ${errorCount}
+resolvedCount: ${resolvedCount}
+---
+
+# 📊 Klausur- & Quiz-Fortschritt
+
+> [!NOTE] Automatische Synchronisation
+> Diese Datei speichert deinen aktuellen Lernfortschritt, Fehlerspeicher und Statistiken.
+> Sie wird über Obsidian Sync automatisch zwischen deinen Geräten (Desktop & Mobile) synchronisiert.
+> Bitte die nachfolgenden JSON-Daten im Codeblock nicht manuell verändern.
+
+## 🏆 Aktueller Stand
+- **Stufe**: Level ${payload.userLevel} (${payload.userXP} XP)
+- **Lern-Streak**: 🔥 ${payload.streakDays} Tag(e)
+- **Fehlerspeicher**: ⚠️ ${errorCount} offene Frage(n) (${resolvedCount} gemeistert)
+- **Tamagotchi**: 🐉 ${payload.tamagotchiName || 'Lern-Drache'} (Hunger: ${payload.tamagotchiHunger ?? 85}%, Laune: ${payload.tamagotchiHappiness ?? 90}%)
+- **Zuletzt aktiv**: ${payload.lastActiveDate || 'Noch keine Aktivität'}
+
+\`\`\`json:quiz-hub-data
+${jsonContent}
+\`\`\`
+`;
+    }
+
+    /**
+     * Robustly extracts SyncLearningData from either:
+     * 1. A markdown file with an embedded fenced code block (```json:quiz-hub-data or ```json)
+     * 2. Raw JSON string (legacy or fallback)
+     */
+    public static parseSyncFileContent(content: string): Partial<SyncLearningData> | null {
+        if (!content || !content.trim()) return null;
+
+        // 1. Look for fenced code block containing a JSON object
+        const codeBlockRegex = /```(?:[a-zA-Z0-9_:-]+)?\s*\n?([\s\S]*?)```/g;
+        let match: RegExpExecArray | null;
+        while ((match = codeBlockRegex.exec(content)) !== null) {
+            const candidate = match[1].trim();
+            if (candidate.startsWith('{') && candidate.endsWith('}')) {
+                try {
+                    const parsed = JSON.parse(candidate);
+                    if (typeof parsed === 'object' && parsed !== null) {
+                        return parsed as Partial<SyncLearningData>;
+                    }
+                } catch {
+                    // Not valid JSON in this block, check next block
+                }
+            }
+        }
+
+        // 2. Fallback: Raw JSON directly in file
+        const trimmed = content.trim();
+        if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+            try {
+                const parsed = JSON.parse(trimmed);
+                if (typeof parsed === 'object' && parsed !== null) {
+                    return parsed as Partial<SyncLearningData>;
+                }
+            } catch {
+                // Not valid JSON
+            }
+        }
+
+        return null;
+    }
 }
 

@@ -239,6 +239,12 @@ export default class ExamQuizHubPlugin extends Plugin {
     public async loadSettings(): Promise<void> {
         const savedData = (await this.loadData()) as unknown as Partial<PluginSettingsData> | null;
         this.settings = Object.assign({}, DEFAULT_SETTINGS, savedData || {});
+
+        // Auto-migrate legacy hidden dotfile setting to progress.md for Obsidian Sync compatibility
+        if (this.settings.learningDataFileName === '.quiz-learning-data.json') {
+            this.settings.learningDataFileName = 'progress.md';
+            await this.saveSettings();
+        }
     }
 
     public async saveSettings(): Promise<void> {

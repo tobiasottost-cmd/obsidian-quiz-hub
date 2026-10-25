@@ -119,6 +119,11 @@ export class VaultIndexer {
             return false;
         }
 
+        // Avoid indexing progress sync files (e.g. progress.md)
+        if (file.name === 'progress.md' || file.name === '.quiz-learning-data.json' || normalizedFilePath.endsWith('/progress.md')) {
+            return false;
+        }
+
         return true;
     }
 
@@ -164,9 +169,15 @@ export class VaultIndexer {
      */
     public async indexFile(file: TFile): Promise<ParsedExamFile | null> {
         try {
-            const content = await this.app.vault.read(file);
             const metadata = this.app.metadataCache.getFileCache(file);
             const frontmatterCache = metadata?.frontmatter;
+
+            // Skip progress sync files marked with quiz-hub-sync frontmatter
+            if (frontmatterCache && frontmatterCache['quiz-hub-sync']) {
+                return null;
+            }
+
+            const content = await this.app.vault.read(file);
 
             const parsed = ExamParser.parse(content, file.path, frontmatterCache);
 

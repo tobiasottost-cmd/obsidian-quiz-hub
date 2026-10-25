@@ -278,6 +278,43 @@ assert(merged.errorPool['q-conflict'].consecutiveSuccess === 1, 'Conflict questi
 assert(merged.errorPool['q-resolved-on-pc'] === undefined, 'Mastered question not resurrected by stale mobile error');
 assert(merged.resolvedPool['q-resolved-on-pc'] === 5000, 'ResolvedPool preserved resolution timestamp');
 
+// Test Progress.md Markdown Serialization & Parsing
+const testPayload: SyncLearningData = {
+    version: 1,
+    lastSyncTimestamp: 1730000000000,
+    errorPool: {
+        'q-1': { filePath: 'exams/test.md', questionId: 'q-1', failCount: 2, consecutiveSuccess: 1, lastFailedAt: 1730000000000 }
+    },
+    resolvedPool: { 'q-0': 1729999000000 },
+    fsrsData: {},
+    userXP: 820,
+    userLevel: 3,
+    streakDays: 5,
+    lastActiveDate: '2026-10-25',
+    tamagotchiHunger: 80,
+    tamagotchiHappiness: 95,
+    tamagotchiName: 'Feuer-Drache'
+};
+
+const formattedMd = LearningDataMerger.formatProgressMarkdown(testPayload);
+assert(formattedMd.includes('quiz-hub-sync: true'), 'formatProgressMarkdown includes quiz-hub-sync frontmatter');
+assert(formattedMd.includes('```json:quiz-hub-data'), 'formatProgressMarkdown includes json code block');
+assert(formattedMd.includes('Level 3 (820 XP)'), 'formatProgressMarkdown includes human readable level and XP');
+
+const parsedFromMd = LearningDataMerger.parseSyncFileContent(formattedMd);
+assert(parsedFromMd !== null, 'parseSyncFileContent successfully parsed markdown file');
+assert(parsedFromMd?.userXP === 820, 'Parsed userXP matches serialized payload');
+assert(parsedFromMd?.streakDays === 5, 'Parsed streakDays matches serialized payload');
+assert(parsedFromMd?.errorPool?.['q-1']?.failCount === 2, 'Parsed errorPool matches serialized payload');
+assert(parsedFromMd?.tamagotchiName === 'Feuer-Drache', 'Parsed tamagotchiName matches');
+
+// Test backward compatibility: raw JSON parsing
+const rawJson = JSON.stringify(testPayload);
+const parsedFromRaw = LearningDataMerger.parseSyncFileContent(rawJson);
+assert(parsedFromRaw !== null, 'parseSyncFileContent successfully parsed raw legacy JSON');
+assert(parsedFromRaw?.userXP === 820, 'Raw JSON parsed userXP matches');
+assert(DEFAULT_SETTINGS.learningDataFileName === 'progress.md', 'DEFAULT_SETTINGS defaults to progress.md');
+
 console.log('\n--- Testing BlockIdAutoAssigner and Hash Fallback ---');
 
 // 1. Test ExamParser fallback when user provides NO block-ID

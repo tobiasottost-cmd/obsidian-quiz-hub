@@ -20,7 +20,7 @@ export class LearningSyncManager {
 
     public getSyncFilePath(): string {
         const folder = this.plugin.settings.examsFolderPath || 'exams';
-        const fileName = this.plugin.settings.learningDataFileName || '.quiz-learning-data.json';
+        const fileName = this.plugin.settings.learningDataFileName || 'progress.md';
         return normalizePath(`${folder}/${fileName}`);
     }
 
@@ -78,7 +78,34 @@ export class LearningSyncManager {
             const exists = await adapter.exists(syncPath);
 
             if (!exists) {
-                // First time or file not yet created in vault: seed file with current local settings
+                // Check if legacy file exists: e.g. exams/.quiz-learning-data.json
+                const folder = this.plugin.settings.examsFolderPath || 'exams';
+                const legacyPath = normalizePath(`${folder}/.quiz-learning-data.json`);
+                if (await adapter.exists(legacyPath)) {
+                    try {
+                        const legacyContent = await adapter.read(legacyPath);
+                        const legacyParsed = LearningDataMerger.parseSyncFileContent(legacyContent);
+                        if (legacyParsed) {
+                            const { merged } = LearningSyncManager.mergeLearningData(this.plugin.settings, legacyParsed);
+                            this.plugin.settings.errorPool = merged.errorPool;
+                            this.plugin.settings.resolvedPool = merged.resolvedPool;
+                            this.plugin.settings.fsrsData = merged.fsrsData;
+                            this.plugin.settings.userXP = merged.userXP;
+                            this.plugin.settings.userLevel = merged.userLevel;
+                            this.plugin.settings.streakDays = merged.streakDays;
+                            this.plugin.settings.lastActiveDate = merged.lastActiveDate;
+                            this.plugin.settings.tamagotchiHunger = merged.tamagotchiHunger;
+                            this.plugin.settings.tamagotchiHappiness = merged.tamagotchiHappiness;
+                            this.plugin.settings.tamagotchiLastFedDate = merged.tamagotchiLastFedDate;
+                            this.plugin.settings.tamagotchiName = merged.tamagotchiName;
+                            await this.plugin.saveSettings();
+                        }
+                    } catch (e) {
+                        console.warn('[Exam Quiz Hub] Fehler bei Migration alter Lerndaten:', e);
+                    }
+                }
+
+                // Seed new sync file in vault with current local settings
                 await this.writeToVault(this.plugin.settings);
                 return false;
             }
@@ -89,7 +116,12 @@ export class LearningSyncManager {
                 return false;
             }
 
-            const parsed = JSON.parse(content) as Partial<SyncLearningData>;
+            const parsed = LearningDataMerger.parseSyncFileContent(content);
+            if (!parsed) {
+                console.warn('[Exam Quiz Hub] Konnte Lerndaten nicht aus Sync-Datei parsen:', syncPath);
+                return false;
+            }
+
             const { changed, merged } = LearningSyncManager.mergeLearningData(this.plugin.settings, parsed);
 
             if (changed) {
@@ -141,21 +173,23 @@ export class LearningSyncManager {
                 if (exists) {
                     const content = await adapter.read(syncPath);
                     if (content && content.trim()) {
-                        const parsed = JSON.parse(content) as Partial<SyncLearningData>;
-                        const { changed, merged } = LearningSyncManager.mergeLearningData(this.plugin.settings, parsed);
-                        if (changed) {
-                            this.plugin.settings.errorPool = merged.errorPool;
-                            this.plugin.settings.resolvedPool = merged.resolvedPool;
-                            this.plugin.settings.fsrsData = merged.fsrsData;
-                            this.plugin.settings.userXP = merged.userXP;
-                            this.plugin.settings.userLevel = merged.userLevel;
-                            this.plugin.settings.streakDays = merged.streakDays;
-                            this.plugin.settings.lastActiveDate = merged.lastActiveDate;
-                            this.plugin.settings.tamagotchiHunger = merged.tamagotchiHunger;
-                            this.plugin.settings.tamagotchiHappiness = merged.tamagotchiHappiness;
-                            this.plugin.settings.tamagotchiLastFedDate = merged.tamagotchiLastFedDate;
-                            this.plugin.settings.tamagotchiName = merged.tamagotchiName;
-                            await this.plugin.saveSettings();
+                        const parsed = LearningDataMerger.parseSyncFileContent(content);
+                        if (parsed) {
+                            const { changed, merged } = LearningSyncManager.mergeLearningData(this.plugin.settings, parsed);
+                            if (changed) {
+                                this.plugin.settings.errorPool = merged.errorPool;
+                                this.plugin.settings.resolvedPool = merged.resolvedPool;
+                                this.plugin.settings.fsrsData = merged.fsrsData;
+                                this.plugin.settings.userXP = merged.userXP;
+                                this.plugin.settings.userLevel = merged.userLevel;
+                                this.plugin.settings.streakDays = merged.streakDays;
+                                this.plugin.settings.lastActiveDate = merged.lastActiveDate;
+                                this.plugin.settings.tamagotchiHunger = merged.tamagotchiHunger;
+                                this.plugin.settings.tamagotchiHappiness = merged.tamagotchiHappiness;
+                                this.plugin.settings.tamagotchiLastFedDate = merged.tamagotchiLastFedDate;
+                                this.plugin.settings.tamagotchiName = merged.tamagotchiName;
+                                await this.plugin.saveSettings();
+                            }
                         }
                     }
                 }
@@ -194,7 +228,11 @@ export class LearningSyncManager {
             tamagotchiName: settings.tamagotchiName || 'Lern-Drache'
         };
 
-        const fileContent = JSON.stringify(payload, null, 2);
+        const isMarkdown = syncPath.toLowerCase().endsWith('.md');
+        const fileContent = isMarkdown
+            ? LearningDataMerger.formatProgressMarkdown(payload)
+            : JSON.stringify(payload, null, 2);
+
         this.lastLocalWriteTime = Date.now();
 
         await this.app.vault.adapter.write(syncPath, fileContent);
