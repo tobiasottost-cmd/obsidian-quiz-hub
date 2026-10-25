@@ -102,7 +102,7 @@ export class ExamSession {
                     listener();
                 }
             }
-        }, 1000) as unknown as number;
+        }, 1000);
     }
 
     private stopTimer(): void {
@@ -117,7 +117,7 @@ export class ExamSession {
         // 15 seconds auto-save requirement from specification v3
         this.autoSaveInterval = window.setInterval(() => {
             void this.triggerAutoSave();
-        }, 15000) as unknown as number;
+        }, 15000);
     }
 
     private stopAutoSaveTimer(): void {
