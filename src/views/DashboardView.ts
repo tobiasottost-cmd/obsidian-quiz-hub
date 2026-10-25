@@ -8,6 +8,8 @@ export const VIEW_TYPE_DASHBOARD = 'exam-quiz-hub-dashboard';
 
 export class DashboardView extends ItemView {
     private plugin: ExamQuizHubPlugin;
+    private activeCatalogFilter: 'all' | 'exam' | 'quiz' = 'all';
+    private generatorMode: 'exam' | 'quiz' = 'exam';
 
     constructor(leaf: WorkspaceLeaf, plugin: ExamQuizHubPlugin) {
         super(leaf);
@@ -87,10 +89,11 @@ export class DashboardView extends ItemView {
         const active = this.plugin.settings.activeSession;
         if (!active) return;
 
+        const isQuiz = active.mode === 'quiz';
         const banner = container.createDiv({ cls: 'exam-hub-resume-banner' });
         const infoRow = banner.createDiv({ cls: 'resume-info-row' });
         const iconSpan = infoRow.createSpan({ cls: 'resume-icon' });
-        setIcon(iconSpan, 'alert-circle');
+        setIcon(iconSpan, isQuiz ? 'zap' : 'alert-circle');
 
         const answeredCount = Object.keys(active.userAnswers).filter(id => {
             const ans = active.userAnswers[id];
@@ -98,14 +101,20 @@ export class DashboardView extends ItemView {
                    (ans.freetextAnswer && ans.freetextAnswer.trim().length > 0);
         }).length;
 
-        const remainingMin = Math.max(0, Math.ceil(active.remainingSeconds / 60));
+        const infoText = isQuiz
+            ? `Laufendes Quiz: "${active.examTitle}" (${answeredCount}/${active.questions.length} beantwortet • ⚡ Direktes Feedback)`
+            : `Laufende Klausur: "${active.examTitle}" (${answeredCount}/${active.questions.length} beantwortet, ca. ${Math.max(0, Math.ceil(active.remainingSeconds / 60))} Min. Restzeit)`;
+
         infoRow.createDiv({
             cls: 'resume-text',
-            text: `Laufende Sitzung: "${active.examTitle}" (${answeredCount}/${active.questions.length} beantwortet, ca. ${remainingMin} Min. Restzeit)`
+            text: infoText
         });
 
         const actionsRow = banner.createDiv({ cls: 'resume-actions' });
-        const resumeBtn = actionsRow.createEl('button', { cls: 'mod-cta', text: 'Fortsetzen' });
+        const resumeBtn = actionsRow.createEl('button', {
+            cls: 'mod-cta',
+            text: isQuiz ? 'Quiz fortsetzen' : 'Klausur fortsetzen'
+        });
         resumeBtn.addEventListener('click', () => {
             void this.plugin.startExamWithSession(active);
         });
@@ -134,14 +143,32 @@ export class DashboardView extends ItemView {
                 text: `${count} Frage(n) im Fehlerspeicher. Eine Frage wird entlastet, sobald du sie im Fehlertraining 2x hintereinander fehlerfrei beantwortest.`
             });
 
-            const trainBtn = errorCard.createEl('button', {
+            const btnRow = errorCard.createDiv({ cls: 'error-pool-actions-row' });
+
+            const trainQuizBtn = btnRow.createEl('button', {
                 cls: 'mod-cta start-error-btn',
-                text: `Fehlerspeicher trainieren (${count} Fragen)`
+                text: `⚡ Fehlerspeicher als Quiz trainieren (${count})`
             });
-            trainBtn.addEventListener('click', () => {
+            trainQuizBtn.addEventListener('click', () => {
                 const session = ExamGenerator.createErrorPoolSession(
                     this.plugin.indexer.getAllQuestions(),
-                    this.plugin.settings.errorPool
+                    this.plugin.settings.errorPool,
+                    'quiz'
+                );
+                if (session) {
+                    void this.plugin.startExamWithSession(session);
+                }
+            });
+
+            const trainExamBtn = btnRow.createEl('button', {
+                cls: 'start-error-btn secondary-btn',
+                text: '⏱️ Als Klausur simulieren'
+            });
+            trainExamBtn.addEventListener('click', () => {
+                const session = ExamGenerator.createErrorPoolSession(
+                    this.plugin.indexer.getAllQuestions(),
+                    this.plugin.settings.errorPool,
+                    'exam'
                 );
                 if (session) {
                     void this.plugin.startExamWithSession(session);
@@ -160,18 +187,32 @@ export class DashboardView extends ItemView {
         const titleRow = card.createDiv({ cls: 'card-title-row' });
         const icon = titleRow.createSpan({ cls: 'card-title-icon' });
         setIcon(icon, 'sliders');
-        titleRow.createEl('h3', { text: 'Dynamischer Klausur-Generator (Modul-Mix)' });
+        titleRow.createEl('h3', { text: 'Dynamischer Generator (Modul-Mix)' });
 
         const availableModules = this.plugin.indexer.getAvailableModules();
         if (availableModules.length === 0) {
             card.createEl('p', {
                 cls: 'text-muted',
-                text: `Keine Klausuren im Ordner "${this.plugin.settings.examsFolderPath}" gefunden. Erstelle Markdown-Dateien im Ordner oder passe den Pfad in den Einstellungen an.`
+                text: `Keine Klausuren oder Quizze im Ordner "${this.plugin.settings.examsFolderPath}" gefunden. Erstelle Markdown-Dateien im Ordner oder passe den Pfad in den Einstellungen an.`
             });
             return;
         }
 
         const form = card.createDiv({ cls: 'generator-form' });
+
+        // Mode Selector: Exam vs Quiz
+        const modeRow = form.createDiv({ cls: 'generator-mode-row' });
+        modeRow.createEl('label', { text: 'Modus wählen:' });
+        const modeButtonsGroup = modeRow.createDiv({ cls: 'generator-mode-toggle-group' });
+
+        const examModeBtn = modeButtonsGroup.createEl('button', {
+            cls: `mode-toggle-btn ${this.generatorMode === 'exam' ? 'is-active' : ''}`,
+            text: '⏱️ Klausur-Modus (Mit Zeitlimit & Endauswertung)'
+        });
+        const quizModeBtn = modeButtonsGroup.createEl('button', {
+            cls: `mode-toggle-btn ${this.generatorMode === 'quiz' ? 'is-active' : ''}`,
+            text: '⚡ Quiz-Modus (Sofort-Feedback pro Frage)'
+        });
 
         // Module selection
         form.createEl('label', { text: 'Module auswählen:' });
@@ -209,6 +250,11 @@ export class DashboardView extends ItemView {
 
         const timeEstimate = form.createEl('p', { cls: 'time-estimate text-muted' });
 
+        const startMixBtn = form.createEl('button', {
+            cls: 'mod-cta start-mix-btn',
+            text: this.generatorMode === 'quiz' ? '⚡ Modul-Mix Quiz starten' : '⏱️ Modul-Mix Klausur starten'
+        });
+
         const updateAvailableCount = () => {
             const availableQuestions = this.plugin.indexer.getQuestionsForModules(Array.from(selectedModules));
             const maxQ = Math.max(5, availableQuestions.length);
@@ -219,19 +265,35 @@ export class DashboardView extends ItemView {
             const qCount = parseInt(slider.value);
             countDisplay.setText(String(qCount));
             const estMin = Math.round(qCount * 1.5);
-            timeEstimate.setText(`Verfügbar: ${availableQuestions.length} Fragen im Pool | Zeitlimit: ca. ${estMin} Minuten`);
+
+            if (this.generatorMode === 'quiz') {
+                timeEstimate.setText(`Verfügbar: ${availableQuestions.length} Fragen im Pool | Modus: Quiz (Ohne Zeitlimit, direktes Feedback)`);
+                startMixBtn.setText('⚡ Modul-Mix Quiz starten');
+            } else {
+                timeEstimate.setText(`Verfügbar: ${availableQuestions.length} Fragen im Pool | Zeitlimit: ca. ${estMin} Minuten`);
+                startMixBtn.setText('⏱️ Modul-Mix Klausur starten');
+            }
         };
+
+        examModeBtn.addEventListener('click', () => {
+            this.generatorMode = 'exam';
+            examModeBtn.addClass('is-active');
+            quizModeBtn.removeClass('is-active');
+            updateAvailableCount();
+        });
+
+        quizModeBtn.addEventListener('click', () => {
+            this.generatorMode = 'quiz';
+            quizModeBtn.addClass('is-active');
+            examModeBtn.removeClass('is-active');
+            updateAvailableCount();
+        });
 
         slider.addEventListener('input', () => {
             updateAvailableCount();
         });
 
         updateAvailableCount();
-
-        const startMixBtn = form.createEl('button', {
-            cls: 'mod-cta start-mix-btn',
-            text: 'Modul-Mix Klausur starten'
-        });
 
         startMixBtn.addEventListener('click', () => {
             const availableQuestions = this.plugin.indexer.getQuestionsForModules(Array.from(selectedModules));
@@ -241,7 +303,8 @@ export class DashboardView extends ItemView {
             const qCount = parseInt(slider.value);
             const session = ExamGenerator.createDynamicMix(availableQuestions, {
                 modules: Array.from(selectedModules),
-                questionCount: qCount
+                questionCount: qCount,
+                mode: this.generatorMode
             });
             void this.plugin.startExamWithSession(session);
         });
@@ -254,18 +317,56 @@ export class DashboardView extends ItemView {
         setIcon(icon, 'folder');
         titleRow.createEl('h3', { text: 'Klausuren & Quiz-Pools' });
 
-        const exams = this.plugin.indexer.getAllExamFiles();
-        if (exams.length === 0) {
+        const allExams = this.plugin.indexer.getAllExamFiles();
+        if (allExams.length === 0) {
             catalog.createEl('p', {
                 cls: 'text-muted',
-                text: 'Keine Klausur-Dateien gefunden.'
+                text: 'Keine Klausur- oder Quiz-Dateien gefunden.'
+            });
+            return;
+        }
+
+        const examCount = allExams.filter(e => e.frontmatter.type !== 'quiz').length;
+        const quizCount = allExams.filter(e => e.frontmatter.type === 'quiz').length;
+
+        // Filter Tabs: Alle | Klausuren | Quizze
+        const filterBar = catalog.createDiv({ cls: 'exam-hub-filter-tabs' });
+        const tabs: { id: 'all' | 'exam' | 'quiz'; label: string; count: number }[] = [
+            { id: 'all', label: 'Alle', count: allExams.length },
+            { id: 'exam', label: '⏱️ Klausuren', count: examCount },
+            { id: 'quiz', label: '⚡ Quizze', count: quizCount }
+        ];
+
+        tabs.forEach(tab => {
+            const tabBtn = filterBar.createEl('button', {
+                cls: `filter-tab-btn ${this.activeCatalogFilter === tab.id ? 'is-active' : ''}`,
+                text: `${tab.label} (${tab.count})`
+            });
+            tabBtn.addEventListener('click', () => {
+                this.activeCatalogFilter = tab.id;
+                this.render();
+            });
+        });
+
+        const filteredExams = allExams.filter(e => {
+            if (this.activeCatalogFilter === 'exam') return e.frontmatter.type !== 'quiz';
+            if (this.activeCatalogFilter === 'quiz') return e.frontmatter.type === 'quiz';
+            return true;
+        });
+
+        if (filteredExams.length === 0) {
+            catalog.createEl('p', {
+                cls: 'text-muted',
+                text: this.activeCatalogFilter === 'quiz'
+                    ? 'Keine Notizen mit "type: quiz" gefunden. Du kannst aber jede Klausur unten als Quiz durchspielen!'
+                    : 'Keine Einträge für diesen Filter gefunden.'
             });
             return;
         }
 
         // Group exams by module
         const grouped = new Map<string, ParsedExamFile[]>();
-        for (const exam of exams) {
+        for (const exam of filteredExams) {
             const mod = exam.frontmatter.module || 'Allgemein';
             if (!grouped.has(mod)) {
                 grouped.set(mod, []);
@@ -280,35 +381,79 @@ export class DashboardView extends ItemView {
             const groupHeader = groupDiv.createDiv({ cls: 'module-group-header' });
             const groupIcon = groupHeader.createSpan({ cls: 'module-icon' });
             setIcon(groupIcon, 'book-open');
-            groupHeader.createEl('h4', { text: `${mod} (${moduleExams.length} Klausuren)` });
+            groupHeader.createEl('h4', { text: `${mod} (${moduleExams.length} Einträge)` });
 
             const examsGrid = groupDiv.createDiv({ cls: 'module-exams-grid' });
 
             for (const exam of moduleExams) {
-                const examCard = examsGrid.createDiv({ cls: 'exam-item-card' });
+                const isQuizType = exam.frontmatter.type === 'quiz';
+                const examCard = examsGrid.createDiv({ cls: `exam-item-card ${isQuizType ? 'is-quiz-card' : 'is-exam-card'}` });
                 const cardTop = examCard.createDiv({ cls: 'exam-item-top' });
-                cardTop.createEl('h5', { text: exam.frontmatter.title || 'Klausur' });
+                cardTop.createEl('h5', { text: exam.frontmatter.title || (isQuizType ? 'Quiz' : 'Klausur') });
+
+                const badgeContainer = cardTop.createDiv({ cls: 'exam-card-badges' });
+                if (isQuizType) {
+                    badgeContainer.createSpan({ cls: 'exam-badge quiz-type-badge', text: '⚡ Quiz' });
+                } else {
+                    badgeContainer.createSpan({ cls: 'exam-badge exam-type-badge', text: '⏱️ Klausur' });
+                }
 
                 if (exam.frontmatter.semester) {
-                    cardTop.createSpan({ cls: 'exam-badge semester-badge', text: exam.frontmatter.semester });
+                    badgeContainer.createSpan({ cls: 'exam-badge semester-badge', text: exam.frontmatter.semester });
                 }
 
                 const metaRow = examCard.createDiv({ cls: 'exam-item-meta' });
                 metaRow.createSpan({ text: `📝 ${exam.questions.length} Fragen` });
-                const time = exam.frontmatter.timeLimitMinutes ?? 90;
-                metaRow.createSpan({ text: `⏱️ ${time} Min.` });
+                if (isQuizType) {
+                    metaRow.createSpan({ cls: 'quiz-direct-feedback-badge', text: '⚡ Direktes Feedback' });
+                } else {
+                    const time = exam.frontmatter.timeLimitMinutes ?? 90;
+                    metaRow.createSpan({ text: `⏱️ ${time} Min.` });
+                }
                 const pass = exam.frontmatter.passingScore || `${this.plugin.settings.defaultPassingScore}%`;
                 metaRow.createSpan({ text: `🎯 Bestehen: ${pass}` });
 
-                const startBtn = examCard.createEl('button', {
-                    cls: 'mod-cta exam-start-btn',
-                    text: 'Klausur starten'
-                });
+                // Action buttons: Dual options (Start as Quiz or Start as Exam)
+                const actionsRow = examCard.createDiv({ cls: 'exam-card-actions-row' });
 
-                startBtn.addEventListener('click', () => {
-                    const session = ExamGenerator.fromParsedExam(exam);
-                    void this.plugin.startExamWithSession(session);
-                });
+                if (isQuizType) {
+                    const startQuizBtn = actionsRow.createEl('button', {
+                        cls: 'mod-cta exam-start-btn',
+                        text: '⚡ Quiz starten'
+                    });
+                    startQuizBtn.addEventListener('click', () => {
+                        const session = ExamGenerator.fromParsedExam(exam, 'quiz');
+                        void this.plugin.startExamWithSession(session);
+                    });
+
+                    const startExamBtn = actionsRow.createEl('button', {
+                        cls: 'exam-start-btn secondary-btn',
+                        text: '⏱️ Als Klausur starten'
+                    });
+                    startExamBtn.addEventListener('click', () => {
+                        const session = ExamGenerator.fromParsedExam(exam, 'exam');
+                        void this.plugin.startExamWithSession(session);
+                    });
+                } else {
+                    const startExamBtn = actionsRow.createEl('button', {
+                        cls: 'mod-cta exam-start-btn',
+                        text: '⏱️ Klausur starten'
+                    });
+                    startExamBtn.addEventListener('click', () => {
+                        const session = ExamGenerator.fromParsedExam(exam, 'exam');
+                        void this.plugin.startExamWithSession(session);
+                    });
+
+                    // Allows playing any exam as a quiz!
+                    const startQuizBtn = actionsRow.createEl('button', {
+                        cls: 'exam-start-btn secondary-btn',
+                        text: '⚡ Als Quiz spielen'
+                    });
+                    startQuizBtn.addEventListener('click', () => {
+                        const session = ExamGenerator.fromParsedExam(exam, 'quiz');
+                        void this.plugin.startExamWithSession(session);
+                    });
+                }
             }
         }
     }

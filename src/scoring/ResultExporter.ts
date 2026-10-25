@@ -63,10 +63,12 @@ export class ResultExporter {
     private static generateMarkdown(result: SessionResult, sessionState: ActiveSessionState, date: Date): string {
         const failedCount = result.questionEvaluations.filter(e => !e.isFullyCorrect).length;
         const durationMin = Math.round(result.timeSpentSeconds / 60);
+        const isQuiz = sessionState.mode === 'quiz';
 
         const frontmatter = [
             '---',
-            'type: exam-result',
+            `type: ${isQuiz ? 'quiz-result' : 'exam-result'}`,
+            `mode: "${isQuiz ? 'quiz' : 'exam'}"`,
             `date: ${date.toISOString()}`,
             `module: "${result.module}"`,
             `title: "${result.examTitle}"`,
@@ -82,9 +84,10 @@ export class ResultExporter {
         ].join('\n');
 
         const summaryCallout = [
-            `# Klausur-Protokoll: ${result.examTitle}`,
+            `# ${isQuiz ? 'Quiz-Protokoll' : 'Klausur-Protokoll'}: ${result.examTitle}`,
             '',
             `> [!info] Zusammenfassung (${result.module})`,
+            `> * **Modus:** ${isQuiz ? '⚡ Quiz (Direktes Feedback)' : '⏱️ Klausur-Simulation'}`,
             `> * **Ergebnis:** ${result.percentage}% (${result.earnedPoints} / ${result.totalPossiblePoints} Punkte)`,
             `> * **Status:** ${result.passed ? '✅ Bestanden' : '❌ Nicht bestanden'}`,
             `> * **Dauer:** ${durationMin} Minute(n)`,

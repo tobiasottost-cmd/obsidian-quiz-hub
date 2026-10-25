@@ -1,6 +1,7 @@
 import { App, Notice, PluginSettingTab, Setting, SettingDefinitionItem, TFile } from 'obsidian';
 import type ExamQuizHubPlugin from '../main';
 import { BlockIdAutoAssigner } from '../parser/BlockIdAutoAssigner';
+import { ConfettiTrigger } from '../gamification/ConfettiTrigger';
 
 const AI_CONVERTER_PROMPT = `Du bist ein Experte für didaktische Prüfungserstellung und Markdown-Formatierung.
 Wandle die folgenden Lerninhalte, Altfragen oder Prüfungsfragen in das exakte Format für das Obsidian Plugin "Exam and Quiz Hub" um.
@@ -504,13 +505,46 @@ export class SettingsTab extends PluginSettingTab {
             );
 
         new Setting(containerEl)
+            .setName('Soundeffekte testen')
+            .setDesc('Überprüfe die Audiowiedergabe auf diesem Gerät.')
+            .addButton(btn => btn
+                .setButtonText('🔊 Erfolgs-Akkord')
+                .onClick(() => {
+                    this.plugin.soundManager.playSuccessChord();
+                })
+            )
+            .addButton(btn => btn
+                .setButtonText('❌ Fehlerton')
+                .onClick(() => {
+                    this.plugin.soundManager.playFailSound();
+                })
+            )
+            .addButton(btn => btn
+                .setButtonText('🔘 Klick-Ton')
+                .onClick(() => {
+                    this.plugin.soundManager.playClickSound();
+                })
+            );
+
+        new Setting(containerEl)
             .setName('Konfetti-Animation aktivieren')
-            .setDesc('Canvas-Konfetti beim Bestehen einer Klausur anzeigen.')
+            .setDesc('Canvas-Konfetti beim Bestehen einer Klausur oder eines Quiz anzeigen.')
             .addToggle(toggle => toggle
                 .setValue(this.plugin.settings.enableConfetti)
                 .onChange(async (value) => {
                     this.plugin.settings.enableConfetti = value;
                     await this.plugin.saveSettings();
+                })
+            );
+
+        new Setting(containerEl)
+            .setName('Konfetti-Animation testen')
+            .setDesc('Feuere das zweistufige Konfetti-Feuerwerk zur visuellen Überprüfung ab.')
+            .addButton(btn => btn
+                .setButtonText('🎉 Konfetti auslösen')
+                .setCta()
+                .onClick(() => {
+                    ConfettiTrigger.testBurst(true);
                 })
             );
 

@@ -23,7 +23,8 @@ export class CrashRecoveryModal extends Modal {
         contentEl.empty();
         contentEl.addClass('exam-recovery-modal');
 
-        contentEl.createEl('h2', { text: 'Laufende Klausur fortsetzen?' });
+        const isQuiz = this.activeSession.mode === 'quiz';
+        contentEl.createEl('h2', { text: isQuiz ? 'Laufendes Quiz fortsetzen?' : 'Laufende Klausur fortsetzen?' });
 
         const answeredCount = Object.keys(this.activeSession.userAnswers).filter(id => {
             const ans = this.activeSession.userAnswers[id];
@@ -36,20 +37,24 @@ export class CrashRecoveryModal extends Modal {
 
         const infoCard = contentEl.createDiv({ cls: 'exam-recovery-info-card' });
         infoCard.createEl('p', {
-            text: `Es wurde eine unvollendete Klausursitzung gefunden:`
+            text: isQuiz ? 'Es wurde eine unvollendete Quiz-Sitzung gefunden:' : 'Es wurde eine unvollendete Klausursitzung gefunden:'
         });
 
         const detailsEl = infoCard.createDiv({ cls: 'exam-recovery-details' });
         detailsEl.createDiv({ text: `Titel: ${this.activeSession.examTitle}` });
         detailsEl.createDiv({ text: `Modul: ${this.activeSession.module}` });
         detailsEl.createDiv({ text: `Fortschritt: ${answeredCount}/${totalQuestions} Fragen beantwortet` });
-        detailsEl.createDiv({ text: `Verbleibende Zeit: ca. ${remainingMinutes} Minute(n)` });
+        if (isQuiz) {
+            detailsEl.createDiv({ text: 'Modus: ⚡ Quiz (Direktes Feedback, ohne Zeitlimit)' });
+        } else {
+            detailsEl.createDiv({ text: `Verbleibende Zeit: ca. ${remainingMinutes} Minute(n)` });
+        }
 
         const buttonBar = contentEl.createDiv({ cls: 'exam-recovery-buttons' });
 
         const resumeBtn = buttonBar.createEl('button', {
             cls: 'mod-cta exam-recovery-resume-btn',
-            text: 'Klausur fortsetzen'
+            text: isQuiz ? 'Quiz fortsetzen' : 'Klausur fortsetzen'
         });
         resumeBtn.addEventListener('click', () => {
             this.close();

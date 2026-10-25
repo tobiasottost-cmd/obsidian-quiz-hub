@@ -43,6 +43,7 @@ export interface ActiveSessionState {
     sessionId: string;
     examTitle: string;
     module: string;
+    mode?: 'exam' | 'quiz';
     sourceFilePath?: string;
     isErrorPoolSession?: boolean;
     startTime: number;
@@ -52,6 +53,8 @@ export interface ActiveSessionState {
     questions: QuestionDefinition[];
     flaggedQuestionIds: string[];
     userAnswers: Record<string, UserAnswerRecord>;
+    revealedQuestions?: Record<string, boolean>;
+    revealedEvaluations?: Record<string, QuestionEvaluation>;
 }
 
 export interface QuestionEvaluation {

@@ -1,4 +1,4 @@
-import { ActiveSessionState, QuestionDefinition, UserAnswerRecord } from '../types';
+import { ActiveSessionState, QuestionDefinition, QuestionEvaluation, UserAnswerRecord } from '../types';
 
 export class ExamSession {
     private state: ActiveSessionState;
@@ -36,8 +36,35 @@ export class ExamSession {
             document.addEventListener('visibilitychange', this.visibilityChangeHandler);
         }
 
-        this.startTimer();
+        // Only start the countdown timer if not in untimed quiz mode
+        if (this.state.mode !== 'quiz') {
+            this.startTimer();
+        }
         this.startAutoSaveTimer();
+    }
+
+    public isQuizMode(): boolean {
+        return this.state.mode === 'quiz';
+    }
+
+    public isRevealed(questionId: string): boolean {
+        return Boolean(this.state.revealedQuestions && this.state.revealedQuestions[questionId]);
+    }
+
+    public getRevealedEvaluation(questionId: string): QuestionEvaluation | undefined {
+        return this.state.revealedEvaluations ? this.state.revealedEvaluations[questionId] : undefined;
+    }
+
+    public revealQuestion(questionId: string, evaluation: QuestionEvaluation): void {
+        if (!this.state.revealedQuestions) {
+            this.state.revealedQuestions = {};
+        }
+        if (!this.state.revealedEvaluations) {
+            this.state.revealedEvaluations = {};
+        }
+        this.state.revealedQuestions[questionId] = true;
+        this.state.revealedEvaluations[questionId] = evaluation;
+        this.notifyStateUpdated();
     }
 
     public getState(): ActiveSessionState {
@@ -62,7 +89,8 @@ export class ExamSession {
 
     private startTimer(): void {
         this.stopTimer();
-        this.timerInterval = window.setInterval(() => {
+        const setTimer = typeof window !== 'undefined' ? window.setInterval : setInterval;
+        this.timerInterval = setTimer(() => {
             if (this.state.remainingSeconds > 0) {
                 this.state.remainingSeconds -= 1;
                 for (const listener of this.tickListeners) {
@@ -74,12 +102,16 @@ export class ExamSession {
                     listener();
                 }
             }
-        }, 1000);
+        }, 1000) as unknown as number;
     }
 
     private stopTimer(): void {
         if (this.timerInterval !== null) {
-            window.clearInterval(this.timerInterval);
+            if (typeof window !== 'undefined') {
+                window.clearInterval(this.timerInterval);
+            } else {
+                clearInterval(this.timerInterval);
+            }
             this.timerInterval = null;
         }
     }
@@ -87,14 +119,19 @@ export class ExamSession {
     private startAutoSaveTimer(): void {
         this.stopAutoSaveTimer();
         // 15 seconds auto-save requirement from specification v3
-        this.autoSaveInterval = window.setInterval(() => {
+        const setTimer = typeof window !== 'undefined' ? window.setInterval : setInterval;
+        this.autoSaveInterval = setTimer(() => {
             void this.triggerAutoSave();
-        }, 15000);
+        }, 15000) as unknown as number;
     }
 
     private stopAutoSaveTimer(): void {
         if (this.autoSaveInterval !== null) {
-            window.clearInterval(this.autoSaveInterval);
+            if (typeof window !== 'undefined') {
+                window.clearInterval(this.autoSaveInterval);
+            } else {
+                clearInterval(this.autoSaveInterval);
+            }
             this.autoSaveInterval = null;
         }
     }

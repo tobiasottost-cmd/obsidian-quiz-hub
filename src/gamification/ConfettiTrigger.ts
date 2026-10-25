@@ -21,11 +21,27 @@ export class ConfettiTrigger {
         }
     }
 
+    /**
+     * Triggers a manual test burst for settings verification.
+     */
+    public static testBurst(celebratory: boolean = true): void {
+        try {
+            if (celebratory) {
+                this.fireGoldFireworks();
+            } else {
+                this.fireStandardBurst();
+            }
+        } catch (e) {
+            console.error('Error triggering test confetti:', e);
+        }
+    }
+
     private static fireStandardBurst(): void {
         void confetti({
             particleCount: 100,
             spread: 70,
             origin: { y: 0.6 },
+            zIndex: 99999,
             disableForReducedMotion: true
         });
     }
@@ -34,6 +50,7 @@ export class ConfettiTrigger {
         const count = 200;
         const defaults = {
             origin: { y: 0.7 },
+            zIndex: 99999,
             disableForReducedMotion: true
         };
 

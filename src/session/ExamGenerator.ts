@@ -9,6 +9,7 @@ export interface ExamGenerationOptions {
     timePerQuestionMinutes?: number;
     shuffleQuestions?: boolean;
     shuffleOptions?: boolean;
+    mode?: 'exam' | 'quiz';
 }
 
 export class ExamGenerator {
@@ -52,8 +53,9 @@ export class ExamGenerator {
 
     /**
      * Generates a session from a specific single exam file.
+     * Allows overriding mode (e.g. playing any exam as a quiz or vice versa).
      */
-    public static fromParsedExam(exam: ParsedExamFile): ActiveSessionState {
+    public static fromParsedExam(exam: ParsedExamFile, overrideMode?: 'exam' | 'quiz'): ActiveSessionState {
         const shuffleQuestions = exam.frontmatter.shuffleQuestions !== false;
         const shuffleOptions = exam.frontmatter.shuffleOptions !== false;
 
@@ -62,13 +64,15 @@ export class ExamGenerator {
             questions = this.shuffle(questions);
         }
 
-        const timeLimitMinutes = exam.frontmatter.timeLimitMinutes ?? 90;
+        const mode: 'exam' | 'quiz' = overrideMode || (exam.frontmatter.type === 'quiz' ? 'quiz' : 'exam');
+        const timeLimitMinutes = mode === 'quiz' ? 0 : (exam.frontmatter.timeLimitMinutes ?? 90);
         const timeLimitSeconds = timeLimitMinutes * 60;
 
         return {
             sessionId: generateUUID(),
-            examTitle: exam.frontmatter.title || 'Klausur',
+            examTitle: exam.frontmatter.title || (mode === 'quiz' ? 'Quiz' : 'Klausur'),
             module: exam.frontmatter.module || 'Allgemein',
+            mode,
             sourceFilePath: exam.sourceFilePath,
             startTime: Date.now(),
             timeLimitSeconds,
@@ -76,7 +80,9 @@ export class ExamGenerator {
             currentQuestionIndex: 0,
             questions,
             flaggedQuestionIds: [],
-            userAnswers: {}
+            userAnswers: {},
+            revealedQuestions: {},
+            revealedEvaluations: {}
         };
     }
 
@@ -95,24 +101,29 @@ export class ExamGenerator {
         const count = Math.min(options.questionCount, pool.length);
         const selectedQuestions = pool.slice(0, count).map(q => this.prepareQuestion(q, shuffleOptions));
 
+        const mode: 'exam' | 'quiz' = options.mode || 'exam';
         const timePerQuestion = options.timePerQuestionMinutes || 1.5;
         const totalMinutes = Math.max(5, Math.round(count * timePerQuestion));
-        const timeLimitSeconds = totalMinutes * 60;
+        const timeLimitSeconds = mode === 'quiz' ? 0 : totalMinutes * 60;
 
         const moduleLabel = options.modules.length > 0 ? options.modules.join(' + ') : 'Alle Module';
-        const title = options.title || `Modul-Mix (${moduleLabel})`;
+        const typeLabel = mode === 'quiz' ? 'Quiz-Mix' : 'Modul-Mix';
+        const title = options.title || `${typeLabel} (${moduleLabel})`;
 
         return {
             sessionId: generateUUID(),
             examTitle: title,
             module: moduleLabel,
+            mode,
             startTime: Date.now(),
             timeLimitSeconds,
             remainingSeconds: timeLimitSeconds,
             currentQuestionIndex: 0,
             questions: selectedQuestions,
             flaggedQuestionIds: [],
-            userAnswers: {}
+            userAnswers: {},
+            revealedQuestions: {},
+            revealedEvaluations: {}
         };
     }
 
@@ -121,7 +132,8 @@ export class ExamGenerator {
      */
     public static createErrorPoolSession(
         allQuestions: QuestionDefinition[],
-        errorPool: Record<string, ErrorPoolItem>
+        errorPool: Record<string, ErrorPoolItem>,
+        mode: 'exam' | 'quiz' = 'exam'
     ): ActiveSessionState | null {
         const errorQuestionIds = new Set(Object.values(errorPool).map(item => item.questionId));
 
@@ -131,12 +143,14 @@ export class ExamGenerator {
         }
 
         const preparedQuestions = this.shuffle(matchedQuestions).map(q => this.prepareQuestion(q, true));
-        const timeLimitSeconds = Math.max(5, Math.round(preparedQuestions.length * 1.5)) * 60;
+        const timeLimitSeconds = mode === 'quiz' ? 0 : Math.max(5, Math.round(preparedQuestions.length * 1.5)) * 60;
+        const titlePrefix = mode === 'quiz' ? 'Fehlerspeicher-Quiz' : 'Fehlerspeicher-Training';
 
         return {
             sessionId: generateUUID(),
-            examTitle: `Fehlerspeicher-Training (${preparedQuestions.length} Fragen)`,
+            examTitle: `${titlePrefix} (${preparedQuestions.length} Fragen)`,
             module: 'Fehlerspeicher',
+            mode,
             isErrorPoolSession: true,
             startTime: Date.now(),
             timeLimitSeconds,
@@ -144,7 +158,9 @@ export class ExamGenerator {
             currentQuestionIndex: 0,
             questions: preparedQuestions,
             flaggedQuestionIds: [],
-            userAnswers: {}
+            userAnswers: {},
+            revealedQuestions: {},
+            revealedEvaluations: {}
         };
     }
 }

@@ -37,6 +37,11 @@ export class SoundManager {
         const ctx = this.getContext();
         if (!ctx) return;
 
+        if (ctx.state === 'suspended') {
+            ctx.resume().then(() => this.playSuccessChord()).catch(() => {});
+            return;
+        }
+
         const frequencies = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
         const now = ctx.currentTime;
         const duration = 1.2;
@@ -71,6 +76,11 @@ export class SoundManager {
         const ctx = this.getContext();
         if (!ctx) return;
 
+        if (ctx.state === 'suspended') {
+            ctx.resume().then(() => this.playFailSound()).catch(() => {});
+            return;
+        }
+
         const now = ctx.currentTime;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -96,6 +106,11 @@ export class SoundManager {
     public playClickSound(): void {
         const ctx = this.getContext();
         if (!ctx) return;
+
+        if (ctx.state === 'suspended') {
+            ctx.resume().then(() => this.playClickSound()).catch(() => {});
+            return;
+        }
 
         const now = ctx.currentTime;
         const osc = ctx.createOscillator();
