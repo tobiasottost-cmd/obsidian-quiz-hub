@@ -117,6 +117,29 @@ export class LearningDataMerger {
             }
         }
 
+        // 6. Tamagotchi State Merge
+        const remoteFedDate = remote.tamagotchiLastFedDate || '';
+        const localFedDate = local.tamagotchiLastFedDate || '';
+        if (remoteFedDate > localFedDate) {
+            updated.tamagotchiLastFedDate = remoteFedDate;
+            if (remote.tamagotchiHunger !== undefined) updated.tamagotchiHunger = remote.tamagotchiHunger;
+            if (remote.tamagotchiHappiness !== undefined) updated.tamagotchiHappiness = remote.tamagotchiHappiness;
+            changed = true;
+        } else if (remoteFedDate === localFedDate && remoteFedDate !== '') {
+            const maxHunger = Math.max(local.tamagotchiHunger ?? 80, remote.tamagotchiHunger ?? 80);
+            const maxHappiness = Math.max(local.tamagotchiHappiness ?? 85, remote.tamagotchiHappiness ?? 85);
+            if (maxHunger !== local.tamagotchiHunger || maxHappiness !== local.tamagotchiHappiness) {
+                updated.tamagotchiHunger = maxHunger;
+                updated.tamagotchiHappiness = maxHappiness;
+                changed = true;
+            }
+        }
+        if (remote.tamagotchiName && remote.tamagotchiName !== 'Lern-Drache' && local.tamagotchiName === 'Lern-Drache') {
+            updated.tamagotchiName = remote.tamagotchiName;
+            changed = true;
+        }
+
         return { changed, merged: updated };
     }
 }
+

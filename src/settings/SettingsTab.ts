@@ -2,6 +2,7 @@ import { App, Notice, PluginSettingTab, Setting, SettingDefinitionItem, TFile } 
 import type ExamQuizHubPlugin from '../main';
 import { BlockIdAutoAssigner } from '../parser/BlockIdAutoAssigner';
 import { ConfettiTrigger } from '../gamification/ConfettiTrigger';
+import { TamagotchiEngine } from '../gamification/TamagotchiEngine';
 
 const AI_CONVERTER_PROMPT = `Du bist ein Experte für didaktische Prüfungserstellung und Markdown-Formatierung.
 Wandle die folgenden Lerninhalte, Altfragen oder Prüfungsfragen in das exakte Format für das Obsidian Plugin "Exam and Quiz Hub" um.
@@ -139,6 +140,37 @@ export class SettingsTab extends PluginSettingTab {
                 type: 'group',
                 heading: 'Audio & Gamification',
                 items: [
+                    {
+                        name: 'Tamagotchi-Lernbegleiter aktivieren',
+                        desc: 'Zeigt deinen virtuellen Drachen-Lernbegleiter auf dem Dashboard an, der mit deinem Lern-Streak und Klausurerfolgen wächst.',
+                        aliases: ['tamagotchi', 'drache', 'begleiter', 'pet', 'gamification'],
+                        control: {
+                            type: 'toggle',
+                            key: 'enableTamagotchi',
+                            defaultValue: true,
+                        },
+                    },
+                    {
+                        name: 'Name des Lernbegleiters',
+                        desc: 'Gib deinem treuen Begleiter einen individuellen Namen.',
+                        aliases: ['tamagotchi', 'name', 'drache', 'begleiter'],
+                        control: {
+                            type: 'text',
+                            key: 'tamagotchiName',
+                            placeholder: 'Lern-Drache',
+                            defaultValue: 'Lern-Drache',
+                        },
+                    },
+                    {
+                        name: 'XP-, Level- & Streak-System anzeigen',
+                        desc: 'Zeigt den oberen Gamification-Fortschrittsbalken (Level, Gesamt-XP und Tages-Streak) auf dem Dashboard an.',
+                        aliases: ['xp', 'level', 'streak', 'fortschritt', 'gamification'],
+                        control: {
+                            type: 'toggle',
+                            key: 'enableXPAndLevels',
+                            defaultValue: true,
+                        },
+                    },
                     {
                         name: 'Soundeffekte aktivieren',
                         desc: 'Synthetisierte Web-Audio-Klänge bei Bestehen, Fehler und Klicks abspielen (100% offline).',
@@ -407,6 +439,24 @@ export class SettingsTab extends PluginSettingTab {
             return;
         }
 
+        if (key === 'enableTamagotchi') {
+            this.plugin.settings.enableTamagotchi = Boolean(value);
+            await this.plugin.saveSettings();
+            return;
+        }
+
+        if (key === 'tamagotchiName') {
+            this.plugin.settings.tamagotchiName = typeof value === 'string' ? value.trim() || 'Lern-Drache' : 'Lern-Drache';
+            await this.plugin.saveSettings();
+            return;
+        }
+
+        if (key === 'enableXPAndLevels') {
+            this.plugin.settings.enableXPAndLevels = Boolean(value);
+            await this.plugin.saveSettings();
+            return;
+        }
+
         if (key === 'syncLearningDataInVault') {
             const enabled = Boolean(value);
             this.plugin.settings.syncLearningDataInVault = enabled;
@@ -478,6 +528,75 @@ export class SettingsTab extends PluginSettingTab {
             );
 
         new Setting(containerEl).setName('Audio & Gamification').setHeading();
+
+        new Setting(containerEl)
+            .setName('Tamagotchi-Lernbegleiter aktivieren')
+            .setDesc('Zeigt deinen virtuellen Drachen-Lernbegleiter auf dem Dashboard an, der mit deinem Lern-Streak und Klausurerfolgen wächst.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.enableTamagotchi)
+                .onChange(async (value) => {
+                    this.plugin.settings.enableTamagotchi = value;
+                    await this.plugin.saveSettings();
+                    this.refreshSettingsTab();
+                })
+            );
+
+        if (this.plugin.settings.enableTamagotchi) {
+            new Setting(containerEl)
+                .setName('Name des Lernbegleiters')
+                .setDesc('Gib deinem treuen Begleiter einen individuellen Namen.')
+                .addText(text => text
+                    .setPlaceholder('Lern-Drache')
+                    .setValue(this.plugin.settings.tamagotchiName || 'Lern-Drache')
+                    .onChange(async (value) => {
+                        this.plugin.settings.tamagotchiName = value.trim() || 'Lern-Drache';
+                        await this.plugin.saveSettings();
+                    })
+                );
+
+            const streak = this.plugin.settings.streakDays || 0;
+            const level = this.plugin.settings.userLevel || 1;
+            const evo = TamagotchiEngine.getEvolutionState(streak, level);
+            const hunger = this.plugin.settings.tamagotchiHunger ?? 85;
+
+            new Setting(containerEl)
+                .setName('Tamagotchi-Status & Aktionen')
+                .setDesc(`Aktuell Stufe ${evo.currentStage.stage} (${evo.currentStage.name}), Sättigung: ${hunger}%.`)
+                .addButton(btn => btn
+                    .setButtonText('🐉 +25 Füttern')
+                    .onClick(async () => {
+                        TamagotchiEngine.feed(this.plugin.settings, 25);
+                        await this.plugin.saveSettings();
+                        await this.plugin.learningSyncManager.saveLearningData();
+                        new Notice(`Begleiter gefüttert! Neue Sättigung: ${this.plugin.settings.tamagotchiHunger}%`);
+                        this.refreshSettingsTab();
+                    })
+                )
+                .addButton(btn => btn
+                    .setButtonText('💖 Streicheln')
+                    .onClick(async () => {
+                        TamagotchiEngine.pet(this.plugin.settings);
+                        if (this.plugin.settings.enableSoundEffects) {
+                            this.plugin.soundManager.playClickSound();
+                        }
+                        await this.plugin.saveSettings();
+                        await this.plugin.learningSyncManager.saveLearningData();
+                        new Notice(`Du hast ${this.plugin.settings.tamagotchiName || 'deinen Begleiter'} gestreichelt!`);
+                        this.refreshSettingsTab();
+                    })
+                );
+        }
+
+        new Setting(containerEl)
+            .setName('XP-, Level- & Streak-System anzeigen')
+            .setDesc('Zeigt den oberen Gamification-Fortschrittsbalken (Level, Gesamt-XP und Tages-Streak) auf dem Dashboard an.')
+            .addToggle(toggle => toggle
+                .setValue(this.plugin.settings.enableXPAndLevels)
+                .onChange(async (value) => {
+                    this.plugin.settings.enableXPAndLevels = value;
+                    await this.plugin.saveSettings();
+                })
+            );
 
         new Setting(containerEl)
             .setName('Soundeffekte aktivieren')

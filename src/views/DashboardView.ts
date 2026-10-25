@@ -1,8 +1,10 @@
-import { ItemView, setIcon, WorkspaceLeaf } from 'obsidian';
+import { App, ItemView, Modal, Notice, setIcon, WorkspaceLeaf } from 'obsidian';
 import type ExamQuizHubPlugin from '../main';
 import { GamificationEngine } from '../gamification/GamificationEngine';
 import { ExamGenerator } from '../session/ExamGenerator';
 import { ParsedExamFile } from '../parser/ExamParser';
+import { TAMAGOTCHI_STAGES } from '../gamification/TamagotchiAssets';
+import { TamagotchiEngine } from '../gamification/TamagotchiEngine';
 
 export const VIEW_TYPE_DASHBOARD = 'exam-quiz-hub-dashboard';
 
@@ -41,7 +43,12 @@ export class DashboardView extends ItemView {
         container.addClass('exam-hub-dashboard-container');
 
         this.renderHeader(container);
-        this.renderGamificationBar(container);
+        if (this.plugin.settings.enableXPAndLevels !== false) {
+            this.renderGamificationBar(container);
+        }
+        if (this.plugin.settings.enableTamagotchi !== false) {
+            this.renderTamagotchiCard(container);
+        }
         this.renderResumeBanner(container);
         this.renderErrorPoolCard(container);
         this.renderGeneratorCard(container);
@@ -457,4 +464,184 @@ export class DashboardView extends ItemView {
             }
         }
     }
+
+    private renderTamagotchiCard(container: HTMLElement): void {
+        const streak = this.plugin.settings.streakDays || 0;
+        const level = this.plugin.settings.userLevel || 1;
+        const evolution = TamagotchiEngine.getEvolutionState(streak, level);
+        const stage = evolution.currentStage.stage;
+        const hunger = this.plugin.settings.tamagotchiHunger ?? 85;
+        const happiness = this.plugin.settings.tamagotchiHappiness ?? 90;
+        const mood = TamagotchiEngine.getMood(hunger, happiness);
+        const companionName = this.plugin.settings.tamagotchiName || 'Lern-Drache';
+        const quote = TamagotchiEngine.getSpeechQuote(stage, mood, streak, companionName);
+        const stageImage = TAMAGOTCHI_STAGES[stage] || TAMAGOTCHI_STAGES[1];
+
+        const card = container.createDiv({ cls: 'exam-hub-card exam-hub-tamagotchi-card' });
+
+        // Header Row
+        const headerRow = card.createDiv({ cls: 'tamagotchi-header-row' });
+        const nameGroup = headerRow.createDiv({ cls: 'tamagotchi-name-group' });
+        const dragonIcon = nameGroup.createSpan({ cls: 'tamagotchi-header-icon' });
+        setIcon(dragonIcon, 'sparkles');
+        nameGroup.createEl('h3', { cls: 'tamagotchi-name', text: companionName });
+
+        const renameBtn = nameGroup.createEl('button', {
+            cls: 'clickable-icon tamagotchi-rename-btn',
+            attr: { 'aria-label': 'Lernbegleiter umbenennen', 'title': 'Lernbegleiter umbenennen' }
+        });
+        setIcon(renameBtn, 'pencil');
+        renameBtn.addEventListener('click', () => {
+            new RenameCompanionModal(this.app, this.plugin, () => this.render()).open();
+        });
+
+        const stageBadge = headerRow.createDiv({ cls: 'tamagotchi-stage-badge' });
+        stageBadge.setText(`Stufe ${stage} / 10 • ${evolution.currentStage.name}`);
+
+        // Main Layout Body
+        const body = card.createDiv({ cls: 'tamagotchi-body' });
+
+        // Left Column: Avatar
+        const avatarCol = body.createDiv({ cls: 'tamagotchi-avatar-col' });
+        const imgWrapper = avatarCol.createDiv({ cls: 'tamagotchi-img-wrapper' });
+        imgWrapper.createEl('img', {
+            cls: 'tamagotchi-avatar-img',
+            attr: {
+                src: stageImage,
+                alt: `${companionName} - ${evolution.currentStage.name}`
+            }
+        });
+        avatarCol.createDiv({ cls: 'tamagotchi-subtitle', text: evolution.currentStage.title });
+
+        // Right Column: Dialogue & Metrics
+        const infoCol = body.createDiv({ cls: 'tamagotchi-info-col' });
+
+        // Speech bubble
+        const speechBubble = infoCol.createDiv({ cls: 'tamagotchi-speech-bubble' });
+        const quoteIcon = speechBubble.createSpan({ cls: 'speech-bubble-icon' });
+        setIcon(quoteIcon, 'message-square');
+        speechBubble.createSpan({ cls: 'speech-bubble-text', text: `„${quote}“` });
+
+        // Stats rows
+        const metrics = infoCol.createDiv({ cls: 'tamagotchi-metrics' });
+
+        // Satiety
+        const satietyRow = metrics.createDiv({ cls: 'tamagotchi-metric-row' });
+        const satietyLabels = satietyRow.createDiv({ cls: 'metric-label-row' });
+        satietyLabels.createSpan({ cls: 'metric-title', text: 'Wissens-Sättigung' });
+        satietyLabels.createSpan({ cls: 'metric-value', text: `${hunger}% • ${mood.emoji} ${mood.label}` });
+
+        const satietyBg = satietyRow.createDiv({ cls: 'exam-hub-progress-bar-bg' });
+        const satietyFill = satietyBg.createDiv({ cls: 'exam-hub-progress-bar-fill tamagotchi-satiety-fill' });
+        satietyFill.setCssStyles({ width: `${hunger}%` });
+
+        // Evolution progress
+        const evoRow = metrics.createDiv({ cls: 'tamagotchi-metric-row' });
+        const evoLabels = evoRow.createDiv({ cls: 'metric-label-row' });
+        evoLabels.createSpan({
+            cls: 'metric-title',
+            text: evolution.isMaxStage ? 'Evolutions-Stufe' : `Fortschritt zu Stufe ${evolution.nextStage?.stage}`
+        });
+        evoLabels.createSpan({
+            cls: 'metric-value',
+            text: evolution.isMaxStage ? 'Maximal 👑' : `${evolution.progressPercentage}%`
+        });
+
+        const evoBg = evoRow.createDiv({ cls: 'exam-hub-progress-bar-bg' });
+        const evoFill = evoBg.createDiv({ cls: 'exam-hub-progress-bar-fill tamagotchi-evo-fill' });
+        evoFill.setCssStyles({ width: `${evolution.progressPercentage}%` });
+
+        evoRow.createDiv({
+            cls: 'metric-hint text-muted',
+            text: evolution.requirementText
+        });
+
+        // Actions
+        const actionsRow = infoCol.createDiv({ cls: 'tamagotchi-actions-row' });
+
+        const petBtn = actionsRow.createEl('button', {
+            cls: 'tamagotchi-action-btn pet-btn',
+            text: '💖 Streicheln'
+        });
+        petBtn.addEventListener('click', async () => {
+            TamagotchiEngine.pet(this.plugin.settings);
+            if (this.plugin.settings.enableSoundEffects) {
+                this.plugin.soundManager.playClickSound();
+            }
+            await this.plugin.saveSettings();
+            await this.plugin.learningSyncManager.saveLearningData();
+
+            const heartEl = imgWrapper.createSpan({ cls: 'tamagotchi-floating-heart', text: '💖' });
+            window.setTimeout(() => heartEl.remove(), 1200);
+
+            new Notice(`Du hast ${companionName} gestreichelt! +Zuneigung & Energie 🥰`);
+            this.render();
+        });
+
+        const feedQuizBtn = actionsRow.createEl('button', {
+            cls: 'mod-cta tamagotchi-action-btn feed-btn',
+            text: '⚡ Jetzt füttern (Schnell-Quiz)'
+        });
+        feedQuizBtn.addEventListener('click', () => {
+            const allQuestions = this.plugin.indexer.getAllQuestions();
+            if (allQuestions.length === 0) {
+                new Notice('Keine Fragen im Klausuren-Ordner gefunden. Erstelle zuerst ein Quiz oder eine Klausur!');
+                return;
+            }
+            const session = ExamGenerator.createDynamicMix(allQuestions, {
+                modules: this.plugin.indexer.getAvailableModules(),
+                questionCount: Math.min(5, allQuestions.length),
+                mode: 'quiz'
+            });
+            void this.plugin.startExamWithSession(session);
+        });
+    }
 }
+
+class RenameCompanionModal extends Modal {
+    private plugin: ExamQuizHubPlugin;
+    private onRenamed: () => void;
+
+    constructor(app: App, plugin: ExamQuizHubPlugin, onRenamed: () => void) {
+        super(app);
+        this.plugin = plugin;
+        this.onRenamed = onRenamed;
+    }
+
+    public onOpen(): void {
+        const { contentEl } = this;
+        contentEl.empty();
+        contentEl.createEl('h3', { text: 'Lernbegleiter umbenennen' });
+
+        const input = contentEl.createEl('input', {
+            type: 'text',
+            value: this.plugin.settings.tamagotchiName || 'Lern-Drache',
+            cls: 'exam-hub-rename-input'
+        });
+        input.setCssStyles({ width: '100%', marginBottom: '16px' });
+        input.focus();
+
+        const btnRow = contentEl.createDiv({ cls: 'exam-hub-modal-buttons' });
+        btnRow.setCssStyles({ display: 'flex', gap: '8px', justifyContent: 'flex-end' });
+
+        const cancelBtn = btnRow.createEl('button', { text: 'Abbrechen' });
+        cancelBtn.addEventListener('click', () => this.close());
+
+        const saveBtn = btnRow.createEl('button', { text: 'Speichern', cls: 'mod-cta' });
+        saveBtn.addEventListener('click', async () => {
+            const newName = input.value.trim();
+            if (newName) {
+                this.plugin.settings.tamagotchiName = newName;
+                await this.plugin.saveSettings();
+                await this.plugin.learningSyncManager.saveLearningData();
+                this.onRenamed();
+                this.close();
+            }
+        });
+    }
+
+    public onClose(): void {
+        this.contentEl.empty();
+    }
+}
+

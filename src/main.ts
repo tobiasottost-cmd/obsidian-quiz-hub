@@ -14,6 +14,7 @@ import { ErrorPoolManager } from './errorpool/ErrorPoolManager';
 import { ExamGenerator } from './session/ExamGenerator';
 import { LearningSyncManager } from './sync/LearningSyncManager';
 import { BlockIdAutoAssigner } from './parser/BlockIdAutoAssigner';
+import { TamagotchiEngine } from './gamification/TamagotchiEngine';
 
 export default class ExamQuizHubPlugin extends Plugin {
     public settings: PluginSettingsData = DEFAULT_SETTINGS;
@@ -30,6 +31,14 @@ export default class ExamQuizHubPlugin extends Plugin {
             await this.learningSyncManager.initialize();
         } catch (err) {
             console.error('[Exam Quiz Hub] Fehler beim Initialisieren des LearningSyncManagers:', err);
+        }
+
+        // Apply daily Tamagotchi decay if enabled
+        if (this.settings.enableTamagotchi) {
+            const { decayed } = TamagotchiEngine.applyDailyDecay(this.settings);
+            if (decayed) {
+                void this.saveSettings();
+            }
         }
 
         // Initialize mobile-safe audio
@@ -297,6 +306,12 @@ export default class ExamQuizHubPlugin extends Plugin {
 
         // Update error pool
         ErrorPoolManager.processSessionResults(this.settings, sessionState, result);
+
+        // Update Tamagotchi nutrition if enabled
+        if (this.settings.enableTamagotchi) {
+            const isQuiz = sessionState.mode === 'quiz';
+            TamagotchiEngine.feed(this.settings, isQuiz ? 25 : 40);
+        }
 
         // Clear active session from crash-recovery
         this.settings.activeSession = null;

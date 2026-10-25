@@ -5,6 +5,8 @@ import { ExamSession } from '../src/session/ExamSession';
 import { ErrorPoolManager } from '../src/errorpool/ErrorPoolManager';
 import { GamificationEngine } from '../src/gamification/GamificationEngine';
 import { BlockIdAutoAssigner } from '../src/parser/BlockIdAutoAssigner';
+import { TamagotchiEngine } from '../src/gamification/TamagotchiEngine';
+import { TAMAGOTCHI_STAGES } from '../src/gamification/TamagotchiAssets';
 import { ActiveSessionState, DEFAULT_SETTINGS, PluginSettingsData } from '../src/types';
 
 function assert(condition: boolean, message: string) {
@@ -398,5 +400,90 @@ assert(activeExamSession.isRevealed('q-quiz-01') === true, 'Question marked as r
 assert(activeExamSession.getRevealedEvaluation('q-quiz-01')?.earnedPoints === 1, 'Evaluation preserved in session');
 activeExamSession.destroy();
 
+console.log('\n--- Testing Tamagotchi Learning Companion Engine ---');
+
+// 1. Asset map verification (All 10 stages present as base64 webp)
+for (let s = 1; s <= 10; s++) {
+    assert(typeof TAMAGOTCHI_STAGES[s] === 'string' && TAMAGOTCHI_STAGES[s].startsWith('data:image/webp;base64,'), `Tamagotchi stage ${s} asset is embedded base64 WebP`);
+}
+
+// 2. Stage progression calculation
+const evoInit = TamagotchiEngine.getEvolutionState(0, 1);
+assert(evoInit.currentStage.stage === 1, 'Stage 1 (Drachen-Ei) at 0 streak, level 1');
+assert(evoInit.isMaxStage === false, 'Stage 1 is not max stage');
+assert(evoInit.nextStage?.stage === 2, 'Next stage is Stage 2');
+
+const evoHatchedStreak = TamagotchiEngine.getEvolutionState(1, 1);
+assert(evoHatchedStreak.currentStage.stage === 2, 'Stage 2 (Frisch geschlüpft) reached via 1 day streak');
+
+const evoHatchedLevel = TamagotchiEngine.getEvolutionState(0, 2);
+assert(evoHatchedLevel.currentStage.stage === 2, 'Stage 2 reached via Level 2 even with 0 streak');
+
+const evoSchool = TamagotchiEngine.getEvolutionState(7, 1);
+assert(evoSchool.currentStage.stage === 5, 'Stage 5 (Schuldrache) reached via 7-day streak');
+
+const evoSchoolLevel = TamagotchiEngine.getEvolutionState(0, 6);
+assert(evoSchoolLevel.currentStage.stage === 5, 'Stage 5 reached via Level 6');
+
+const evoMax = TamagotchiEngine.getEvolutionState(55, 25);
+assert(evoMax.currentStage.stage === 10, 'Stage 10 (Ehrwürdiger Wissensdrache) reached at high streak/level');
+assert(evoMax.isMaxStage === true, 'Stage 10 is max stage');
+assert(evoMax.nextStage === null, 'No next stage at max level');
+assert(evoMax.progressPercentage === 100, 'Max stage has 100% progress');
+
+// 3. Nutrition & Feeding
+const testSettings: PluginSettingsData = Object.assign({}, DEFAULT_SETTINGS, {
+    tamagotchiHunger: 50,
+    tamagotchiHappiness: 60,
+    tamagotchiLastFedDate: '',
+    tamagotchiLastDecayDate: '2026-10-20'
+});
+
+const feedResult = TamagotchiEngine.feed(testSettings, 25);
+assert(feedResult.newHunger === 75, 'Feeding +25 increases hunger to 75');
+assert(feedResult.added === 25, 'Feed added 25 hunger');
+assert(testSettings.tamagotchiHunger === 75, 'Settings hunger updated');
+assert(testSettings.tamagotchiHappiness > 60, 'Happiness increased with feeding');
+assert(testSettings.tamagotchiLastFedDate !== '', 'Last fed date updated');
+
+// Test cap at 100
+TamagotchiEngine.feed(testSettings, 50);
+assert(testSettings.tamagotchiHunger === 100, 'Hunger capped at 100%');
+
+// 4. Petting
+testSettings.tamagotchiHappiness = 80;
+const petResult = TamagotchiEngine.pet(testSettings);
+assert(petResult.happinessGained > 0, 'Petting increases happiness');
+
+// 5. Daily decay (Min threshold = 15%, pet never dies)
+const decaySettings: PluginSettingsData = Object.assign({}, DEFAULT_SETTINGS, {
+    tamagotchiHunger: 25,
+    tamagotchiHappiness: 30,
+    tamagotchiLastDecayDate: '2026-10-01' // Long time ago
+});
+const decayResult = TamagotchiEngine.applyDailyDecay(decaySettings);
+assert(decayResult.decayed === true, 'Daily decay applied');
+assert(decaySettings.tamagotchiHunger >= 15, 'Dragon never dies: hunger never drops below 15%');
+assert(decaySettings.tamagotchiHappiness >= 20, 'Happiness never drops below 20%');
+
+// Idempotent decay on same day
+const decayResult2 = TamagotchiEngine.applyDailyDecay(decaySettings);
+assert(decayResult2.decayed === false, 'Decay is idempotent on the same calendar day');
+
+// 6. Mood determination
+const moodEcstatic = TamagotchiEngine.getMood(95, 90);
+assert(moodEcstatic.mood === 'ecstatic', 'High hunger and happiness = ecstatic mood');
+
+const moodHungry = TamagotchiEngine.getMood(22, 50);
+assert(moodHungry.mood === 'hungry', 'Low hunger = hungry mood');
+
+const moodSleepy = TamagotchiEngine.getMood(15, 20);
+assert(moodSleepy.mood === 'sleepy', 'Minimum hunger = sleepy mood');
+
+// 7. Dynamic dialogue speech quote
+const quote = TamagotchiEngine.getSpeechQuote(2, moodEcstatic, 7, 'Sparky');
+assert(quote.length > 0, 'Generated speech quote is not empty');
+
 console.log('\n🎉 ALL CORE LOGIC AND SPECIFICATION UNIT TESTS PASSED!');
+
 

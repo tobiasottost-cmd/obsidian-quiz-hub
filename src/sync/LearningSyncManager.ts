@@ -100,6 +100,10 @@ export class LearningSyncManager {
                 this.plugin.settings.userLevel = merged.userLevel;
                 this.plugin.settings.streakDays = merged.streakDays;
                 this.plugin.settings.lastActiveDate = merged.lastActiveDate;
+                this.plugin.settings.tamagotchiHunger = merged.tamagotchiHunger;
+                this.plugin.settings.tamagotchiHappiness = merged.tamagotchiHappiness;
+                this.plugin.settings.tamagotchiLastFedDate = merged.tamagotchiLastFedDate;
+                this.plugin.settings.tamagotchiName = merged.tamagotchiName;
 
                 await this.plugin.saveSettings();
                 await this.writeToVault(this.plugin.settings);
@@ -147,6 +151,10 @@ export class LearningSyncManager {
                             this.plugin.settings.userLevel = merged.userLevel;
                             this.plugin.settings.streakDays = merged.streakDays;
                             this.plugin.settings.lastActiveDate = merged.lastActiveDate;
+                            this.plugin.settings.tamagotchiHunger = merged.tamagotchiHunger;
+                            this.plugin.settings.tamagotchiHappiness = merged.tamagotchiHappiness;
+                            this.plugin.settings.tamagotchiLastFedDate = merged.tamagotchiLastFedDate;
+                            this.plugin.settings.tamagotchiName = merged.tamagotchiName;
                             await this.plugin.saveSettings();
                         }
                     }
@@ -179,7 +187,11 @@ export class LearningSyncManager {
             userXP: settings.userXP || 0,
             userLevel: settings.userLevel || 1,
             streakDays: settings.streakDays || 0,
-            lastActiveDate: settings.lastActiveDate || ''
+            lastActiveDate: settings.lastActiveDate || '',
+            tamagotchiHunger: settings.tamagotchiHunger ?? 85,
+            tamagotchiHappiness: settings.tamagotchiHappiness ?? 90,
+            tamagotchiLastFedDate: settings.tamagotchiLastFedDate || '',
+            tamagotchiName: settings.tamagotchiName || 'Lern-Drache'
         };
 
         const fileContent = JSON.stringify(payload, null, 2);

@@ -2014,3 +2014,281 @@ body.is-mobile .workspace-leaf-content[data-type="exam-quiz-hub-dashboard"] > .v
     right: 2px;
     font-size: 0.65rem;
 }
+
+/* ==========================================================================
+   Tamagotchi Learning Companion (Dashboard Card)
+   ========================================================================== */
+.exam-hub-tamagotchi-card {
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-l, 12px);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease;
+}
+
+.exam-hub-tamagotchi-card:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+}
+
+.tamagotchi-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tamagotchi-name-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tamagotchi-header-icon {
+    color: var(--interactive-accent);
+    display: flex;
+    align-items: center;
+}
+
+.tamagotchi-name {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-normal);
+}
+
+.tamagotchi-rename-btn {
+    min-width: 32px;
+    min-height: 32px;
+    padding: 4px;
+    color: var(--text-muted);
+    border-radius: var(--radius-s, 4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.tamagotchi-rename-btn:hover {
+    color: var(--text-normal);
+    background-color: var(--background-modifier-hover);
+}
+
+.tamagotchi-stage-badge {
+    background-color: rgba(var(--interactive-accent-rgb, 100, 100, 240), 0.12);
+    color: var(--interactive-accent);
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.tamagotchi-body {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+}
+
+.tamagotchi-avatar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 160px;
+    position: relative;
+    user-select: none;
+}
+
+.tamagotchi-img-wrapper {
+    position: relative;
+    width: 145px;
+    height: 145px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-m, 12px);
+    background: radial-gradient(circle, rgba(var(--interactive-accent-rgb, 100, 100, 240), 0.12) 0%, transparent 70%);
+}
+
+.tamagotchi-avatar-img {
+    max-width: 135px;
+    max-height: 135px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+    animation: exam-hub-tamagotchi-float 3.5s ease-in-out infinite;
+}
+
+@keyframes exam-hub-tamagotchi-float {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+.tamagotchi-subtitle {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.tamagotchi-floating-heart {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    font-size: 2rem;
+    animation: exam-hub-heart-float 1.2s ease-out forwards;
+    pointer-events: none;
+    z-index: 10;
+}
+
+@keyframes exam-hub-heart-float {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 0) scale(0.5);
+    }
+    30% {
+        opacity: 1;
+        transform: translate(-50%, -20px) scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50px) scale(1);
+    }
+}
+
+.tamagotchi-info-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tamagotchi-speech-bubble {
+    position: relative;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-m, 8px);
+    padding: 10px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-style: italic;
+    font-size: 0.92rem;
+    color: var(--text-normal);
+}
+
+.tamagotchi-speech-bubble .speech-bubble-icon {
+    color: var(--interactive-accent);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.tamagotchi-speech-bubble .speech-bubble-text {
+    line-height: 1.45;
+}
+
+.tamagotchi-metrics {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tamagotchi-metric-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tamagotchi-metric-row .metric-label-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+}
+
+.tamagotchi-metric-row .metric-title {
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.tamagotchi-metric-row .metric-value {
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.tamagotchi-satiety-fill {
+    background-color: #10b981;
+}
+
+.tamagotchi-evo-fill {
+    background-color: var(--interactive-accent);
+}
+
+.tamagotchi-metric-row .metric-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.tamagotchi-actions-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+}
+
+.tamagotchi-action-btn {
+    min-height: 44px;
+    padding: 8px 16px;
+    border-radius: var(--radius-s, 6px);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--background-modifier-border);
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+    transition: all 0.15s ease;
+}
+
+.tamagotchi-action-btn:hover {
+    border-color: var(--interactive-accent);
+    background-color: var(--background-modifier-hover);
+}
+
+.tamagotchi-action-btn.feed-btn {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent, #ffffff);
+    border-color: var(--interactive-accent);
+}
+
+.tamagotchi-action-btn.feed-btn:hover {
+    opacity: 0.92;
+}
+
+@media (max-width: 600px) {
+    .tamagotchi-body {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .tamagotchi-actions-row {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .tamagotchi-action-btn {
+        flex: 1;
+        min-width: 140px;
+    }
+}
+

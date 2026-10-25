@@ -114,6 +114,10 @@ export interface SyncLearningData {
     userLevel: number;
     streakDays: number;
     lastActiveDate: string;
+    tamagotchiHunger?: number;
+    tamagotchiHappiness?: number;
+    tamagotchiLastFedDate?: string;
+    tamagotchiName?: string;
 }
 
 export interface PluginSettingsData {
@@ -123,6 +127,13 @@ export interface PluginSettingsData {
     enableSoundEffects: boolean;
     enableConfetti: boolean;
     soundVolume: number;
+    enableTamagotchi: boolean;
+    tamagotchiName: string;
+    tamagotchiHunger: number;
+    tamagotchiHappiness: number;
+    tamagotchiLastFedDate: string;
+    tamagotchiLastDecayDate: string;
+    enableXPAndLevels: boolean;
     userXP: number;
     userLevel: number;
     streakDays: number;
@@ -142,6 +153,13 @@ export const DEFAULT_SETTINGS: PluginSettingsData = {
     enableSoundEffects: true,
     enableConfetti: true,
     soundVolume: 0.5,
+    enableTamagotchi: true,
+    tamagotchiName: 'Lern-Drache',
+    tamagotchiHunger: 85,
+    tamagotchiHappiness: 90,
+    tamagotchiLastFedDate: '',
+    tamagotchiLastDecayDate: '',
+    enableXPAndLevels: true,
     userXP: 0,
     userLevel: 1,
     streakDays: 0,
@@ -153,3 +171,4 @@ export const DEFAULT_SETTINGS: PluginSettingsData = {
     syncLearningDataInVault: true,
     learningDataFileName: '.quiz-learning-data.json'
 };
+
