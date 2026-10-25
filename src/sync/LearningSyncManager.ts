@@ -257,12 +257,6 @@ export class LearningSyncManager {
     }
 
     private notifyOpenViews(): void {
-        // Trigger dashboard re-render if visible
-        for (const leaf of this.app.workspace.getLeavesOfType('exam-hub-dashboard')) {
-            const view = leaf.view as { render?: () => void };
-            if (typeof view.render === 'function') {
-                view.render();
-            }
-        }
+        this.plugin.refreshOpenDashboards();
     }
 }

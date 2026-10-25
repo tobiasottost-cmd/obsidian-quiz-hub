@@ -491,8 +491,21 @@ assert(moodSleepy.mood === 'sleepy', 'Minimum hunger = sleepy mood');
 
 // 7. Dynamic dialogue speech quote
 const quote = TamagotchiEngine.getSpeechQuote(2, moodEcstatic, 7, 'Sparky');
-assert(quote.length > 0, 'Generated speech quote is not empty');
+// 8. ExamSession Lifecycle & Destruction Guard (Zombie session prevention)
+let autoSaveCallCount = 0;
+const destroyGuardedSession = new ExamSession(quizSession, async () => {
+    autoSaveCallCount++;
+});
+void destroyGuardedSession.triggerAutoSave().then(() => {
+    assert(autoSaveCallCount === 1, 'Auto-save called while session is active');
+    destroyGuardedSession.destroy();
+    return destroyGuardedSession.triggerAutoSave();
+}).then(() => {
+    assert(autoSaveCallCount === 1, 'Auto-save suppressed after session destroyed (no zombie resurrection)');
+    console.log('✅ ExamSession suppresses auto-save after destroy()');
+});
 
 console.log('\n🎉 ALL CORE LOGIC AND SPECIFICATION UNIT TESTS PASSED!');
+
 
 

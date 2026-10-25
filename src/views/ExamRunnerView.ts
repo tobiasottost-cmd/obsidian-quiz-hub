@@ -35,6 +35,9 @@ export class ExamRunnerView extends ItemView {
     }
 
     public setSession(session: ExamSession): void {
+        if (this.session && this.session !== session) {
+            this.session.destroy();
+        }
         this.session = session;
         this.renderComponent.load();
 
@@ -61,12 +64,7 @@ export class ExamRunnerView extends ItemView {
     }
 
     public async onOpen(): Promise<void> {
-        if (!this.session) {
-            // If opened without active session, check if active session in settings exists
-            if (this.plugin.settings.activeSession) {
-                void this.plugin.startExamWithSession(this.plugin.settings.activeSession);
-            }
-        }
+        // Active session is injected and managed by plugin.startExamWithSession
     }
 
     public async onClose(): Promise<void> {
@@ -74,6 +72,8 @@ export class ExamRunnerView extends ItemView {
         this.renderComponent.unload();
         if (this.session) {
             await this.session.triggerAutoSave();
+            this.session.destroy();
+            this.session = null;
         }
     }
 
@@ -945,7 +945,7 @@ export class ExamRunnerView extends ItemView {
         modal.titleEl.setText(isQuiz ? 'Quiz verlassen?' : 'Klausur verlassen?');
         modal.contentEl.createEl('p', {
             text: isQuiz
-                ? 'Dein bisheriger Fortschritt ist zwischengespeichert. Du kannst das Quiz jederzeit über das Dashboard fortsetzen.'
+                ? 'Möchtest du das Quiz pausieren (um es später im Dashboard fortzusetzen) oder verwerfen?'
                 : 'Deine bisherigen Antworten und die verbleibende Zeit sind zwischengespeichert. Du kannst die Klausur später über das Dashboard oder den Wiederherstellungsdialog fortsetzen.'
         });
 
@@ -953,12 +953,28 @@ export class ExamRunnerView extends ItemView {
         const cancelBtn = btnRow.createEl('button', { text: 'Weiterbearbeiten' });
         cancelBtn.addEventListener('click', () => modal.close());
 
-        const exitBtn = btnRow.createEl('button', { cls: 'mod-warning', text: 'Zum Dashboard' });
+        const discardBtn = btnRow.createEl('button', { cls: 'mod-warning', text: isQuiz ? 'Quiz verwerfen' : 'Abbrechen & verwerfen' });
+        discardBtn.addEventListener('click', () => {
+            void (async () => {
+                modal.close();
+                if (this.session) {
+                    this.session.destroy();
+                    this.session = null;
+                }
+                this.plugin.settings.activeSession = null;
+                await this.plugin.saveSettings();
+                await this.plugin.openDashboard(this.leaf);
+            })();
+        });
+
+        const exitBtn = btnRow.createEl('button', { cls: 'mod-cta', text: isQuiz ? 'Pausieren (Zum Dashboard)' : 'Zum Dashboard' });
         exitBtn.addEventListener('click', () => {
             void (async () => {
                 modal.close();
                 if (this.session) {
                     await this.session.triggerAutoSave();
+                    this.session.destroy();
+                    this.session = null;
                 }
                 await this.plugin.openDashboard(this.leaf);
             })();

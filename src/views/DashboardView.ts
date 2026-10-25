@@ -35,6 +35,13 @@ export class DashboardView extends ItemView {
         this.plugin.indexer.onIndexUpdated(() => {
             this.render();
         });
+        this.registerEvent(
+            this.app.workspace.on('active-leaf-change', (leaf) => {
+                if (leaf === this.leaf) {
+                    this.render();
+                }
+            })
+        );
     }
 
     public render(): void {
@@ -131,7 +138,7 @@ export class DashboardView extends ItemView {
             void (async () => {
                 this.plugin.settings.activeSession = null;
                 await this.plugin.saveSettings();
-                this.render();
+                this.plugin.refreshOpenDashboards();
             })();
         });
     }

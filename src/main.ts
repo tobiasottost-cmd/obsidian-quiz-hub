@@ -262,6 +262,22 @@ export default class ExamQuizHubPlugin extends Plugin {
         });
 
         await workspace.revealLeaf(leaf);
+
+        if (leaf.view instanceof DashboardView) {
+            leaf.view.render();
+        }
+    }
+
+    /**
+     * Re-renders all currently open Dashboard views to ensure instant UI synchronization.
+     */
+    public refreshOpenDashboards(): void {
+        const leaves = this.app.workspace.getLeavesOfType(VIEW_TYPE_DASHBOARD);
+        for (const leaf of leaves) {
+            if (leaf.view instanceof DashboardView) {
+                leaf.view.render();
+            }
+        }
     }
 
     /**
@@ -286,11 +302,18 @@ export default class ExamQuizHubPlugin extends Plugin {
 
         const runnerView = leaf.view as ExamRunnerView;
         const examSession = new ExamSession(sessionState, async (updatedState) => {
+            if (!this.settings.activeSession) {
+                return;
+            }
+            if (this.settings.activeSession.sessionId !== updatedState.sessionId) {
+                return;
+            }
             this.settings.activeSession = updatedState;
             await this.saveSettings();
         });
 
         runnerView.setSession(examSession);
+        this.refreshOpenDashboards();
     }
 
     /**
@@ -317,6 +340,7 @@ export default class ExamQuizHubPlugin extends Plugin {
         this.settings.activeSession = null;
         await this.saveSettings();
         await this.learningSyncManager.saveLearningData();
+        this.refreshOpenDashboards();
 
         // Reuse the leaf that was running the exam instead of opening a new tab
         const { workspace } = this.app;

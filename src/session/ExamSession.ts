@@ -10,6 +10,7 @@ export class ExamSession {
     private questionChangedListeners: ((index: number, question: QuestionDefinition) => void)[] = [];
     private stateUpdatedListeners: ((state: ActiveSessionState) => void)[] = [];
     private timeExpiredListeners: (() => void)[] = [];
+    private isDestroyed = false;
 
     private beforeUnloadHandler: () => void;
     private visibilityChangeHandler: () => void;
@@ -127,6 +128,9 @@ export class ExamSession {
     }
 
     public async triggerAutoSave(): Promise<void> {
+        if (this.isDestroyed) {
+            return;
+        }
         try {
             await this.onAutoSaveCallback(this.state);
         } catch (err) {
@@ -273,6 +277,7 @@ export class ExamSession {
      * Cleans up all intervals and global event listeners deterministically.
      */
     public destroy(): void {
+        this.isDestroyed = true;
         this.stopTimer();
         this.stopAutoSaveTimer();
 
