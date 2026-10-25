@@ -196,7 +196,7 @@ ${jsonContent}
             const candidate = match[1].trim();
             if (candidate.startsWith('{') && candidate.endsWith('}')) {
                 try {
-                    const parsed = JSON.parse(candidate);
+                    const parsed: unknown = JSON.parse(candidate);
                     if (typeof parsed === 'object' && parsed !== null) {
                         return parsed as Partial<SyncLearningData>;
                     }
@@ -210,7 +210,7 @@ ${jsonContent}
         const trimmed = content.trim();
         if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
             try {
-                const parsed = JSON.parse(trimmed);
+                const parsed: unknown = JSON.parse(trimmed);
                 if (typeof parsed === 'object' && parsed !== null) {
                     return parsed as Partial<SyncLearningData>;
                 }
